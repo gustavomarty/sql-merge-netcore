@@ -1,25 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System.Data;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bulk
 {
     public class MergeBuilder<TEntity> where TEntity : class
     {
         private string _tableName;
-
-        private List<string> _mergeColumns { get; set; }
-        private List<string> _updatedColumns { get; set; }
+        private List<(string, Type)> _mergeColumns { get; set; }
+        private List<(string, Type)> _updatedColumns { get; set; }
         //private Dictionary<string, ConditionTypes> Condition { get; set; }
         private List<TEntity> _dataSource { get; set; }
-
         private IDbTransaction _dbTransaction { get; set; }
 
         public MergeBuilder()
@@ -34,9 +24,10 @@ namespace Bulk
             {
                 var memberExpression = (MemberExpression)expression.Body;
                 var fieldName = memberExpression.Member.Name;
+                var fileType = memberExpression.Member.GetType();
 
                 if (!string.IsNullOrWhiteSpace(fieldName))
-                    _mergeColumns.Add(fieldName);
+                    _mergeColumns.Add(new(fieldName, fileType));
 
             }
 
@@ -49,9 +40,10 @@ namespace Bulk
             {
                 var memberExpression = (MemberExpression)expression.Body;
                 var fieldName = memberExpression.Member.Name;
+                var fileType = memberExpression.Member.GetType();
 
                 if (!string.IsNullOrWhiteSpace(fieldName))
-                    _updatedColumns.Add(fieldName);
+                    _updatedColumns.Add(new (fieldName, fileType));
 
             }
 
@@ -72,14 +64,14 @@ namespace Bulk
 
         public string Execute()
         {
-            CreateTempTable(_dbTransaction);
-            PopulateTempTable(_dbTransaction);
-
+            CreateTempTable();
+            PopulateTempTable();
+            RunMerge();
 
             return "Deu boa!!";
         }
 
-        private void RunMerge(IDbTransaction dbTransaction)
+        private void RunMerge()
         {
             var mergeQuery = $@"
                 MERGE {_tableName} as tgt
@@ -91,40 +83,56 @@ namespace Bulk
                 output $action;
             ";
 
-            var sqlCommand = dbTransaction.Connection.CreateCommand();
+            var sqlCommand = _dbTransaction.Connection.CreateCommand();
 
-            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.Transaction = _dbTransaction;
             sqlCommand.CommandText = mergeQuery;
 
             sqlCommand.ExecuteNonQuery();
 
         }
 
-        private void CreateTempTable(IDbTransaction dbTransaction)
+        private void CreateTempTable()
         {
-            var sqlCommand = dbTransaction.Connection.CreateCommand();
+            var sqlCommand = _dbTransaction.Connection.CreateCommand();
 
-            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.Transaction = _dbTransaction;
             sqlCommand.CommandText = $@"Select Top 0 * into #{_tableName} from {_tableName}";
 
             sqlCommand.ExecuteNonQuery();
         }
 
-        private void PopulateTempTable(IDbTransaction dbTransaction)
+        private void PopulateTempTable()
         {
-            var sqlCommand = dbTransaction.Connection.CreateCommand();
+            var sqlCommand = _dbTransaction.Connection.CreateCommand();
 
-            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.Transaction = _dbTransaction;
             string query = $@"insert into #{_tableName} values";
 
             foreach (var time in _dataSource)
             {
-                query += $" ('{time.DataAtualizacao}', '{time.Campeonato}', '{time.Nome}', {time.Titulos}, {time.Participacoes}, {time.Jogos}, {time.Vitorias}, {time.Derrotas}, {time.Empates}),";
+                query += $" (";
+
+                foreach (var item in _updatedColumns) { 
+                    query += $"{getPropertie(item.Item1, item.Item2)}";
+                }
+                //query += "'{time.DataAtualizacao}', '{time.Campeonato}', '{time.Nome}', {time.Titulos}, {time.Participacoes}, {time.Jogos}, {time.Vitorias}, {time.Derrotas}, {time.Empates}),";
             }
             query = query.Substring(0, query.Length - 1);
+            query += $")";
 
             sqlCommand.CommandText = query;
             sqlCommand.ExecuteNonQuery();
+        }   
+
+        private string getPropertie(string name, Type type)
+        {
+            if (type.Equals(typeof(string)) || type.Equals(typeof(DateTime)))
+                return $"'{name}', ";
+            else
+                return $"{name}, ";
+            
+            
         }
 
 
