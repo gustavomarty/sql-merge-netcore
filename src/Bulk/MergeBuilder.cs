@@ -75,19 +75,20 @@ namespace Bulk
 
         private void RunMerge()
         {
-            var mergeQuery = $@"
-                MERGE {_tableName} as tgt
-                using (select * from #{_tableName}) as src on ";
+            var mergeQuery = $"MERGE {_tableName} as tgt \n using (select * from #{_tableName}) as src on ";
 
             foreach (var item in _mergeColumns)
                 mergeQuery += $"tgt.{item} = src.{item} and ";
             mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
 
-            mergeQuery += @"
-            when matched AND 1 = 1 then
-            update set tgt.titulos = src.titulos, tgt.dataAtualizacao = GETDATE(), tgt.jogos = src.jogos
-            when not matched then ";
+            mergeQuery += "\n when matched AND 1 = 1 then ";
+            mergeQuery += "\n update set ";
 
+            foreach (var item in _updatedColumns)
+                mergeQuery += $"tgt.{item} = src.{item}, ";
+            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
+
+            mergeQuery += "\n when not matched then ";
             mergeQuery += "\n insert values (";
             foreach (var item in _updatedColumns)
             {
