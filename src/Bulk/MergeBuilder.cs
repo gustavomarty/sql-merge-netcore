@@ -20,17 +20,13 @@ namespace Bulk
 
         public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            GetColumns(out var columns, expressions);
-            _mergeColumns.AddRange(columns);
-
+            _mergeColumns.AddRange(GetColumns(expressions));
             return this;
         }
 
         public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            GetColumns(out var columns, expressions);
-            _updatedColumns.AddRange(columns);
-
+            _updatedColumns.AddRange(GetColumns(expressions));
             return this;
         }
 
@@ -63,7 +59,7 @@ namespace Bulk
                 mergeQuery += $"tgt.{item} = src.{item} and ";
             mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
 
-            mergeQuery += "\n when matched AND 1 = 1 then ";
+            mergeQuery += "\n when matched AND 1 = 1 then "; //TODO: Set conditions
             mergeQuery += "\n update set ";
 
             foreach (var item in _updatedColumns)
@@ -72,7 +68,7 @@ namespace Bulk
 
             mergeQuery += "\n when not matched then ";
             mergeQuery += "\n insert values (";
-            foreach (var item in _updatedColumns)
+            foreach (var item in _updatedColumns)     //TODO: percorrer todas, não olhar só pra update (datasource tem tudo) 
             {
                 mergeQuery += $"src.{item}, ";
             }
@@ -136,16 +132,15 @@ namespace Bulk
                 return $"{propertyDetails}, ";
         }
 
-        private static bool GetColumns(out List<string> columns, params Expression<Func<TEntity, object>>[] expressions)
+        private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            columns = null;
             var names = GetMemberNames(expressions);
             if (names != null && names.Any())
             {
-                columns = names;
+                return names;
             }
 
-            return columns != null && columns.Any();
+            return new ();
         }
 
         private static List<string> GetMemberNames<T>(params Expression<Func<T, object>>[] expressions)
@@ -222,9 +217,8 @@ namespace Bulk
             where TConditionType : Enum
         {
             var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-            GetColumns(out var columns, expressions);
-
-            foreach(var expression in columns)
+            
+            foreach(var expression in GetColumns(expressions))
                 _conditions.Add((expression, enumValue));
 
             return this;
