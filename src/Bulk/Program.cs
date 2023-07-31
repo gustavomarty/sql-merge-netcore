@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Bulk.Entities;
+using Bulk.Models.Enumerators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
