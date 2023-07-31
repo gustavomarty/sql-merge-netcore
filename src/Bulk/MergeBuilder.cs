@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using System.Data;
+﻿using System.Data;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Bulk
 {
@@ -23,9 +21,7 @@ namespace Bulk
         public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
             GetColumns(out var columns, expressions);
-
-            foreach (var expression in columns)
-                _mergeColumns.Add(expression);
+            _mergeColumns.AddRange(columns);
 
             return this;
         }
@@ -33,9 +29,7 @@ namespace Bulk
         public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
             GetColumns(out var columns, expressions);
-
-            foreach (var expression in columns)
-                _updatedColumns.Add(expression);
+            _updatedColumns.AddRange(columns);
 
             return this;
         }
@@ -131,12 +125,15 @@ namespace Bulk
 
         private string getPropertieValue(TEntity property, string name)
         {
-            var t = property.GetType().GetProperty(name).GetValue(property, null);
+            var propertyDetails = property?.GetType()?.GetProperty(name)?.GetValue(property, null);
 
-            if (t.GetType().Name.Equals(typeof(string).Name) || t.GetType().Name.Equals(typeof(DateTime).Name))
-                return $"'{t}', ";
+            if (propertyDetails == null)
+                return string.Empty;
+
+            if (propertyDetails.GetType().Name.Equals(typeof(string).Name) || propertyDetails.GetType().Name.Equals(typeof(DateTime).Name))
+                return $"'{propertyDetails}', ";
             else
-                return $"{t}, ";
+                return $"{propertyDetails}, ";
         }
 
         private static bool GetColumns(out List<string> columns, params Expression<Func<TEntity, object>>[] expressions)

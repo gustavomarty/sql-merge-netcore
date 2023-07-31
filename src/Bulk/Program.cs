@@ -35,7 +35,7 @@ namespace Bulk
                 {
                     Campeonato = campeonatos[i%2],
                     DataAtualizacao = DateTime.Now,
-                    Nome = $"Tine {i}",
+                    Nome = $"Time {i}",
                     Titulos = i,
                     Derrotas = i,
                     Empates = i,
