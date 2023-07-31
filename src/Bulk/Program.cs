@@ -1,9 +1,7 @@
-﻿using Bulk.Entities;
+﻿using System.Data;
+using Bulk.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Data;
-using System.Runtime.CompilerServices;
 
 namespace Bulk
 {
@@ -19,19 +17,13 @@ namespace Bulk
             {
                 using (var transaction = dbContext.Database.BeginTransaction().GetDbTransaction())
                 {
-                    //RunMerge(transaction);
                     ExecuteBuilderMerge(transaction);
 
                     var count = dbContext.Database.SqlQuery<int>($"select count(*) from #Time");
-
                     transaction.Commit();
                 }
             }
         }
-
-        
-
-
 
         private static void PopulateNewTeams(int quantityTeams)
         {

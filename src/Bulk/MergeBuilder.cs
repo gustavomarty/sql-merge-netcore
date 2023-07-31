@@ -1,34 +1,34 @@
 ﻿using System.Data;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace Bulk
 {
     public class MergeBuilder<TEntity> where TEntity : class
     {
         private string _tableName;
-        private List<(string, Type)> _mergeColumns { get; set; }
-        private List<(string, Type)> _updatedColumns { get; set; }
+        private List<string> _mergeColumns { get; set; } = new List<string>();
+        private List<string> _updatedColumns { get; set; } = new List<string>();
         //private Dictionary<string, ConditionTypes> Condition { get; set; }
         private List<TEntity> _dataSource { get; set; }
         private IDbTransaction _dbTransaction { get; set; }
 
         public MergeBuilder()
         {
-            _tableName = nameof(TEntity);
+            _tableName = typeof(TEntity).Name;
         }
-
 
         public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            foreach (var expression in expressions)
+            string fieldName;
+
+            GetColumns(out var columns, expressions);
+
+            foreach (var expression in columns)
             {
-                var memberExpression = (MemberExpression)expression.Body;
-                var fieldName = memberExpression.Member.Name;
-                var fileType = memberExpression.Member.GetType();
+                fieldName = expression;
 
-                if (!string.IsNullOrWhiteSpace(fieldName))
-                    _mergeColumns.Add(new(fieldName, fileType));
-
+                _mergeColumns.Add(fieldName);
             }
 
             return this;
@@ -36,15 +36,16 @@ namespace Bulk
 
         public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            foreach (var expression in expressions)
+            string fieldName;
+            Type fieldType;
+
+            GetColumns(out var columns, expressions);
+
+            foreach (var expression in columns)
             {
-                var memberExpression = (MemberExpression)expression.Body;
-                var fieldName = memberExpression.Member.Name;
-                var fileType = memberExpression.Member.GetType();
+                fieldName = expression;
 
-                if (!string.IsNullOrWhiteSpace(fieldName))
-                    _updatedColumns.Add(new (fieldName, fileType));
-
+                _updatedColumns.Add(fieldName);
             }
 
             return this;
@@ -109,32 +110,98 @@ namespace Bulk
             sqlCommand.Transaction = _dbTransaction;
             string query = $@"insert into #{_tableName} values";
 
-            foreach (var time in _dataSource)
+            foreach (var property in _dataSource)
             {
                 query += $" (";
 
                 foreach (var item in _updatedColumns) { 
-                    query += $"{getPropertie(item.Item1, item.Item2)}";
+                    query += $"{getPropertieValue(property, item)}";
                 }
+                query = query.Substring(0, query.Length - 2);
+                query += $"),";
+
                 //query += "'{time.DataAtualizacao}', '{time.Campeonato}', '{time.Nome}', {time.Titulos}, {time.Participacoes}, {time.Jogos}, {time.Vitorias}, {time.Derrotas}, {time.Empates}),";
             }
             query = query.Substring(0, query.Length - 1);
-            query += $")";
-
             sqlCommand.CommandText = query;
             sqlCommand.ExecuteNonQuery();
         }   
 
-        private string getPropertie(string name, Type type)
+        private string getPropertieValue(TEntity property, string name)
         {
-            if (type.Equals(typeof(string)) || type.Equals(typeof(DateTime)))
-                return $"'{name}', ";
+            var t = property.GetType().GetProperty(name).GetValue(property, null);
+
+            if (t.GetType().Name.Equals(typeof(string).Name) || t.GetType().Name.Equals(typeof(DateTime).Name))
+                return $"'{t}', ";
             else
-                return $"{name}, ";
-            
-            
+                return $"{t}, ";
         }
 
+        private static bool GetColumns(out List<string> columns, params Expression<Func<TEntity, object>>[] expressions)
+        {
+            columns = null;
+            var names = GetMemberNames(expressions);
+            if (names != null && names.Any())
+            {
+                columns = names;
+            }
+
+            return columns != null && columns.Any();
+        }
+
+        private static List<string> GetMemberNames<T>(params Expression<Func<T, object>>[] expressions)
+        {
+            if (expressions.Length == 1 && IsAnonymousType(expressions.First().Body.Type))
+            {
+                return expressions.First().Body.Type.GetProperties().Select(m => m.Name).ToList();
+            }
+
+            return expressions.Select(expression => GetMemberName(expression.Body)).ToList();
+        }
+
+        private static bool IsAnonymousType(Type type)
+        {
+            var hasCompilerGeneratedAttribute = type.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
+            var nameContainsAnonymousType = type.FullName != null && type.FullName.Contains("AnonymousType");
+            return hasCompilerGeneratedAttribute && nameContainsAnonymousType;
+        }
+
+        private static string GetMemberName(Expression expression)
+        {
+            return expression switch
+            {
+                null => throw new ArgumentException(""),
+                MemberExpression memberExpression => memberExpression.Member.Name,
+                MethodCallExpression methodCallExpression => methodCallExpression.Method.Name,
+                UnaryExpression unaryExpression => GetMemberName(unaryExpression),
+                _ => throw new ArgumentException(""),
+            };
+        }
+
+        private static string GetMemberName(UnaryExpression unaryExpression)
+        {
+            if (unaryExpression.Operand is MethodCallExpression methodExpression)
+            {
+                return methodExpression.Method.Name;
+            }
+
+            return ((MemberExpression)unaryExpression.Operand).Member.Name;
+        }
+
+        //public MergeBuilder<TEntity> SetCondition(params Expression<Func<TEntity, (object, ConditionTypes)>>[] expressions)
+        //{
+        //    foreach (var expression in expressions)
+        //    {
+        //        var memberExpression = (MemberExpression)expression.Body;
+        //        var fieldName = memberExpression.Member.Name;
+
+        //        if (!string.IsNullOrWhiteSpace(fieldName))
+        //            MergeColumns.Add(fieldName);
+
+        //    }
+
+        //    return this;
+        //}
 
     }
 

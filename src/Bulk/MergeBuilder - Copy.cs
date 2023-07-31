@@ -15,12 +15,12 @@
 
 //        public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
 //        {
-//            foreach(var expression in expressions)
+//            foreach (var expression in expressions)
 //            {
 //                var memberExpression = (MemberExpression)expression.Body;
 //                var fieldName = memberExpression.Member.Name;
 
-//                if(!string.IsNullOrWhiteSpace(fieldName))
+//                if (!string.IsNullOrWhiteSpace(fieldName))
 //                    MergeColumns.Add(fieldName);
 
 //            }
@@ -36,11 +36,11 @@
 
 //        public MergeBuilder<TEntity> SetMergeColumns(params string[] columns)
 //        {
-//            if (columns.Length == 0) 
+//            if (columns.Length == 0)
 //                return this;
-            
+
 //            MergeColumns = columns.ToList();
-            
+
 //            return this;
 //        }
 
