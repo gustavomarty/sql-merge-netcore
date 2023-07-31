@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Bulk
 {
@@ -76,13 +77,25 @@ namespace Bulk
         {
             var mergeQuery = $@"
                 MERGE {_tableName} as tgt
-                using (select * from #{_tableName}) as src on tgt.campeonato = src.campeonato and tgt.nome = src.nome
-                when matched AND 1=1 then
-	                update set tgt.titulos = src.titulos, tgt.dataAtualizacao = GETDATE(), tgt.jogos = src.jogos
-                when not matched then
-	                insert values (GETDATE(), src.campeonato, src.nome, src.titulos, src.participacoes, src.jogos, src.vitorias, src.derrotas, src.empates)
-                output $action;
-            ";
+                using (select * from #{_tableName}) as src on ";
+
+            foreach (var item in _mergeColumns)
+                mergeQuery += $"tgt.{item} = src.{item} and ";
+            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
+
+            mergeQuery += @"
+            when matched AND 1 = 1 then
+            update set tgt.titulos = src.titulos, tgt.dataAtualizacao = GETDATE(), tgt.jogos = src.jogos
+            when not matched then ";
+
+            mergeQuery += "\n insert values (";
+            foreach (var item in _updatedColumns)
+            {
+                mergeQuery += $"src.{item}, ";
+            }
+            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
+            mergeQuery += ")";
+            mergeQuery += "\n output $action;";
 
             var sqlCommand = _dbTransaction.Connection.CreateCommand();
 
