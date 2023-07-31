@@ -9,7 +9,7 @@ namespace Bulk
         private string _tableName;
         private List<string> _mergeColumns { get; set; } = new List<string>();
         private List<string> _updatedColumns { get; set; } = new List<string>();
-        //private Dictionary<string, ConditionTypes> Condition { get; set; }
+        private List<(string, ConditionTypes)> _conditions { get; set; } = new();
         private List<TEntity> _dataSource { get; set; }
         private IDbTransaction _dbTransaction { get; set; }
 
@@ -158,6 +158,27 @@ namespace Bulk
             return expressions.Select(expression => GetMemberName(expression.Body)).ToList();
         }
 
+        //private static bool GetConditionNames<T>(out List<(string, ConditionTypes)> conditions, Expression<Func<T, ConditionBuilder>> expression)
+        //{
+        //    conditions = new();
+
+        //    var test = ((MemberInitExpression)expression.Body).Bindings;
+        //    var a = (MemberAssignment)test.First();
+
+        //    var aa = a.Expression.Type.GetDefaultMembers()[0];
+
+        //    var property = expression.Body.Type.GetProperty(nameof(ConditionBuilder.Conditions));
+        //    var list = (List<ConditionTypeDto>)property.GetValue(expression.Body);
+
+        //    foreach(var cBuilder in list)
+        //    {
+        //        var fieldName = cBuilder.Field.GetType().GetProperties().Select(x => x.Name).First();
+        //        conditions.Add((fieldName, cBuilder.ConditionType));
+        //    }
+
+        //    return conditions != null && conditions.Any();
+        //}
+
         private static bool IsAnonymousType(Type type)
         {
             var hasCompilerGeneratedAttribute = type.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
@@ -187,21 +208,39 @@ namespace Bulk
             return ((MemberExpression)unaryExpression.Operand).Member.Name;
         }
 
-        //public MergeBuilder<TEntity> SetCondition(params Expression<Func<TEntity, (object, ConditionTypes)>>[] expressions)
+        //public MergeBuilder<TEntity> SetConditions(Expression<Func<TEntity, ConditionBuilder>> expressions)
         //{
-        //    foreach (var expression in expressions)
-        //    {
-        //        var memberExpression = (MemberExpression)expression.Body;
-        //        var fieldName = memberExpression.Member.Name;
+        //    GetConditionNames(out var conditions, expressions);
 
-        //        if (!string.IsNullOrWhiteSpace(fieldName))
-        //            MergeColumns.Add(fieldName);
-
-        //    }
+        //    foreach(var expression in conditions)
+        //        _conditions.Add(expression);
 
         //    return this;
         //}
 
+        public MergeBuilder<TEntity> SetConditions<TConditionType>(TConditionType conditionType, params Expression<Func<TEntity, object>>[] expressions)
+            where TConditionType : Enum
+        {
+            var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            GetColumns(out var columns, expressions);
+
+            foreach(var expression in columns)
+                _conditions.Add((expression, enumValue));
+
+            return this;
+        }
+
     }
+
+    //public class ConditionTypeDto
+    //{
+    //    public object Field { get; set; }
+    //    public ConditionTypes ConditionType { get; set; }
+    //}
+
+    //public class ConditionBuilder
+    //{
+    //    public List<ConditionTypeDto> Conditions { get; set; }
+    //}
 
 }
