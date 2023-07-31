@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using System.Data;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -21,33 +22,20 @@ namespace Bulk
 
         public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            string fieldName;
-
             GetColumns(out var columns, expressions);
 
             foreach (var expression in columns)
-            {
-                fieldName = expression;
-
-                _mergeColumns.Add(fieldName);
-            }
+                _mergeColumns.Add(expression);
 
             return this;
         }
 
         public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            string fieldName;
-            Type fieldType;
-
             GetColumns(out var columns, expressions);
 
             foreach (var expression in columns)
-            {
-                fieldName = expression;
-
-                _updatedColumns.Add(fieldName);
-            }
+                _updatedColumns.Add(expression);
 
             return this;
         }
