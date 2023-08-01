@@ -3,6 +3,7 @@ using Bulk.Models.Enumerators;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Update;
 using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -52,7 +53,7 @@ namespace Bulk
             AllColumns.AddRange(names);
         }
 
-        private void SetPrimaryKeyColumn(IDbConnection dbConnection)
+        private void SetPrimaryKeyColumn(IDbConnection dbConnection) //@TODO: Pensar quando nao é auto increment
         {
             var query = @$"
                 SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
@@ -152,14 +153,14 @@ namespace Bulk
                 }
             }
 
-            stringBuilderQuery.Append($"\n when matched AND ");
+            stringBuilderQuery.Append($"\n when matched");
 
             for(int i = 0; i < Conditions.Count; i++)
             {
                 var operation = Conditions[i].op.DisplayName();
                 var field = Conditions[i].field;
 
-                stringBuilderQuery.Append($"tgt.{field} {operation} src.{field}");
+                stringBuilderQuery.Append($" AND tgt.{field} {operation} src.{field}");
 
                 if(i != (Conditions.Count - 1))
                 {
@@ -223,44 +224,45 @@ namespace Bulk
             sqlCommand.ExecuteNonQuery();
         }
 
+        //private void PopulateTempTable(IDbConnection dbConnection)
+        //{
+        //    var sqlCommand = dbConnection.CreateCommand();
+
+        //    sqlCommand.Transaction = DbTransaction;
+        //    var stringBuilderQuery = new StringBuilder($"insert into #{_tableName} values");
+
+        //    var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+        //    for (int k=0; k<DataSource.Count; k++)
+        //    {
+        //        stringBuilderQuery.Append($" (");
+
+        //        for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
+        //        {
+        //            bool isLastField = i == (allColumnsWithOutPrimaryKey.Count - 1);
+        //            stringBuilderQuery.Append($"{MergeBuilder<TEntity>.GetPropertieValue(DataSource[k], allColumnsWithOutPrimaryKey[i], isLastField)}");
+        //        }
+
+        //        string finalStr = k != (DataSource.Count - 1) ? ")," : ")";
+        //        stringBuilderQuery.Append(finalStr);
+        //    }
+
+        //    sqlCommand.CommandText = stringBuilderQuery.ToString();
+        //    sqlCommand.ExecuteNonQuery();
+        //}
+
         private void PopulateTempTable(IDbConnection dbConnection)
         {
-            var sqlCommand = dbConnection.CreateCommand();
-
-            sqlCommand.Transaction = DbTransaction;
-            var stringBuilderQuery = new StringBuilder($"insert into #{_tableName} values");
-
-            var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
-
-            for (int k=0; k<DataSource.Count; k++)
+            DataTable table = new()
             {
-                stringBuilderQuery.Append($" (");
+                TableName = _tableName
+            };
 
-                for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
-                {
-                    bool isLastField = i == (allColumnsWithOutPrimaryKey.Count - 1);
-                    stringBuilderQuery.Append($"{MergeBuilder<TEntity>.GetPropertieValue(DataSource[k], allColumnsWithOutPrimaryKey[i], isLastField)}");
-                }
+            using var bulkInsert = new SqlBulkCopy(dbConnection as SqlConnection, SqlBulkCopyOptions.Default, DbTransaction as SqlTransaction);
+            bulkInsert.DestinationTableName = table.TableName;
 
-                string finalStr = k != (DataSource.Count - 1) ? ")," : ")";
-                stringBuilderQuery.Append(finalStr);
-            }
-
-            sqlCommand.CommandText = stringBuilderQuery.ToString();
-            sqlCommand.ExecuteNonQuery();
-        }   
-
-        private static string GetPropertieValue(TEntity property, string name, bool isLastField)
-        {
-            var propertyDetails = property?.GetType()?.GetProperty(name)?.GetValue(property, null);
-
-            if (propertyDetails == null)
-                return string.Empty;
-
-            if (propertyDetails.GetType().Name.Equals(typeof(string).Name) || propertyDetails.GetType().Name.Equals(typeof(DateTime).Name))
-                return isLastField ? $"'{propertyDetails}'" : $"'{propertyDetails}', ";
-            else
-                return isLastField ? $"{propertyDetails}" : $"{propertyDetails}, ";
+            using var dataReader = new ObjectDataReader<TEntity>(DataSource.GetEnumerator());
+            bulkInsert.WriteToServer(dataReader);
         }
 
         private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)

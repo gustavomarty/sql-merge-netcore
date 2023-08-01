@@ -64,8 +64,8 @@ namespace Bulk
                 //        }
                 //    }
                 //)
-                .SetConditions(ConditionTypes.EQUALS, x => new { x.Campeonato, x.Nome })
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.Jogos })
+                //.SetConditions(ConditionTypes.EQUALS, x => new { x.Campeonato, x.Nome })
+                //.SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.Jogos })
                 .SetTransaction(transaction)
                 .Execute();
             
