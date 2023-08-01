@@ -1,6 +1,9 @@
-﻿using System.Data;
+﻿using Microsoft.Data.SqlClient;
+using System.Data;
 using System.Linq.Expressions;
+using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Bulk
 {
@@ -9,6 +12,7 @@ namespace Bulk
         private string _tableName;
         private List<string> _mergeColumns { get; set; } = new List<string>();
         private List<string> _updatedColumns { get; set; } = new List<string>();
+        private List<string> _insertedColumns { get; set; } = new List<string>();
         private List<(string, ConditionTypes)> _conditions { get; set; } = new();
         private List<TEntity> _dataSource { get; set; }
         private IDbTransaction _dbTransaction { get; set; }
@@ -30,6 +34,12 @@ namespace Bulk
             return this;
         }
 
+        public MergeBuilder<TEntity> SetInsertedColumns(params Expression<Func<TEntity, object>>[] expressions)
+        {
+            _insertedColumns.AddRange(GetColumns(expressions));
+            return this;
+        }
+
         public MergeBuilder<TEntity> SetDataSource(List<TEntity> datasource)
         {
             _dataSource = datasource;
@@ -48,6 +58,8 @@ namespace Bulk
             PopulateTempTable();
             RunMerge();
 
+            //TODO: Tratamento de erros e transação
+
             return "Deu boa!!";
         }
 
@@ -59,19 +71,29 @@ namespace Bulk
                 mergeQuery += $"tgt.{item} = src.{item} and ";
             mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
 
-            mergeQuery += "\n when matched AND 1 = 1 then "; //TODO: Set conditions
-            mergeQuery += "\n update set ";
+            mergeQuery += "\n when matched ";
+            
+            if (_conditions is not null)
+            {
+                mergeQuery += " AND ";
+                foreach (var condition in _conditions)
+                    mergeQuery += $"src.{condition.Item1} {GetConditionText(condition.Item2)} tgt.{condition.Item1} and ";
 
+                mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
+            }
+
+            mergeQuery += " then ";             
+            mergeQuery += "\n update set ";
             foreach (var item in _updatedColumns)
                 mergeQuery += $"tgt.{item} = src.{item}, ";
             mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
 
             mergeQuery += "\n when not matched then ";
             mergeQuery += "\n insert values (";
-            foreach (var item in _updatedColumns)     //TODO: percorrer todas, não olhar só pra update (datasource tem tudo) 
-            {
+
+            foreach (var item in _insertedColumns)            
                 mergeQuery += $"src.{item}, ";
-            }
+                        
             mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
             mergeQuery += ")";
             mergeQuery += "\n output $action;";
@@ -83,6 +105,16 @@ namespace Bulk
 
             sqlCommand.ExecuteNonQuery();
 
+        }
+
+        private string GetConditionText(ConditionTypes condition)
+        {
+            return condition switch
+            {
+                ConditionTypes.EQUALS => "=",
+                ConditionTypes.NOT_EQUAL => "<>",
+                _ => ""
+            };
         }
 
         private void CreateTempTable()
@@ -97,31 +129,31 @@ namespace Bulk
 
         private void PopulateTempTable()
         {
-            var sqlCommand = _dbTransaction.Connection.CreateCommand();
+            DataTable table = new DataTable();
+            table.TableName = _tableName;
 
-            sqlCommand.Transaction = _dbTransaction;
-            string query = $@"insert into #{_tableName} values";
-
-            foreach (var property in _dataSource)
+            using (var bulkInsert = new SqlBulkCopy(_dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, _dbTransaction as SqlTransaction))
             {
-                query += $" (";
+                bulkInsert.DestinationTableName = table.TableName;
 
-                foreach (var item in _updatedColumns) { 
-                    query += $"{getPropertieValue(property, item)}";
+                using (var dataReader = new ObjectDataReader<TEntity>(_dataSource.GetEnumerator()))
+                {
+                    bulkInsert.WriteToServer(dataReader);
                 }
-                query = query.Substring(0, query.Length - 2);
-                query += $"),";
-
-                //query += "'{time.DataAtualizacao}', '{time.Campeonato}', '{time.Nome}', {time.Titulos}, {time.Participacoes}, {time.Jogos}, {time.Vitorias}, {time.Derrotas}, {time.Empates}),";
             }
-            query = query.Substring(0, query.Length - 1);
-            sqlCommand.CommandText = query;
-            sqlCommand.ExecuteNonQuery();
         }   
 
-        private string getPropertieValue(TEntity property, string name)
+        private static IEnumerable<string> getAllPropertiesEntity()
         {
-            var propertyDetails = property?.GetType()?.GetProperty(name)?.GetValue(property, null);
+            var properties = typeof(TEntity).GetProperties();
+
+            foreach (var property in properties)
+                yield return property.Name;
+        }
+
+        private static string getPropertieValueToSql(TEntity itemDataSource, string propertyName)
+        {
+            var propertyDetails = itemDataSource?.GetType()?.GetProperty(propertyName)?.GetValue(itemDataSource, null);
 
             if (propertyDetails == null)
                 return string.Empty;
