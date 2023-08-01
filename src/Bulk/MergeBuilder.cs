@@ -1,167 +1,269 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Bulk.Models;
+using Bulk.Models.Enumerators;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Update;
 using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
-using System.Threading;
+using System.Text;
 
 namespace Bulk
 {
     public class MergeBuilder<TEntity> where TEntity : class
     {
-        private string _tableName;
-        private List<string> _mergeColumns { get; set; } = new List<string>();
-        private List<string> _updatedColumns { get; set; } = new List<string>();
-        private List<string> _insertedColumns { get; set; } = new List<string>();
-        private List<(string, ConditionTypes)> _conditions { get; set; } = new();
-        private List<TEntity> _dataSource { get; set; }
-        private IDbTransaction _dbTransaction { get; set; }
+        private readonly string _tableName;
+
+        private List<string> AllColumns { get; set; } = new();
+        private List<string> MergeColumns { get; set; } = new();
+        private List<string> UpdatedColumns { get; set; } = new();
+        private List<(string field, ConditionTypes op)> Conditions { get; set; } = new();
+        private string PrimaryKeyColumn { get; set; } = string.Empty;
+        private string StatusColumn { get; set; } = string.Empty;
+        private List<TEntity> DataSource { get; set; } = new();
+        private IDbTransaction? DbTransaction { get; set; }
 
         public MergeBuilder()
         {
             _tableName = typeof(TEntity).Name;
         }
 
+        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, object>> expression)
+        {
+            StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+
+            return this;
+        }
+
         public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            _mergeColumns.AddRange(GetColumns(expressions));
+            MergeColumns.AddRange(GetColumns(expressions));
             return this;
         }
 
         public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            _updatedColumns.AddRange(GetColumns(expressions));
+            UpdatedColumns.AddRange(GetColumns(expressions));
             return this;
         }
 
-        public MergeBuilder<TEntity> SetInsertedColumns(params Expression<Func<TEntity, object>>[] expressions)
+        private void SetAllColumns()
         {
-            _insertedColumns.AddRange(GetColumns(expressions));
-            return this;
+            var names = typeof(TEntity).GetProperties().Select(x => x.Name);
+            AllColumns.AddRange(names);
         }
+
+        private void SetPrimaryKeyColumn(IDbConnection dbConnection) //@TODO: Pensar quando nao é auto increment
+        {
+            var query = @$"
+                SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
+                AND TABLE_NAME = '{_tableName}'
+            ";
+
+            var sqlCommand = dbConnection.CreateCommand();
+
+            sqlCommand.Transaction = DbTransaction;
+            sqlCommand.CommandText = query;
+
+            var pkField = sqlCommand.ExecuteScalar();
+
+            PrimaryKeyColumn = pkField.ToString();
+        } 
 
         public MergeBuilder<TEntity> SetDataSource(List<TEntity> datasource)
         {
-            _dataSource = datasource;
+            DataSource = datasource;
             return this;
         }
 
         public MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
         {
-            _dbTransaction = transaction;
+            if(transaction == null || transaction.Connection == null)
+            {
+                throw new Exception("");
+            }
+
+            DbTransaction = transaction;
             return this;
         }
 
         public string Execute()
         {
-            CreateTempTable();
-            PopulateTempTable();
-            RunMerge();
+            if(DbTransaction == null || DbTransaction.Connection == null)
+            {
+                throw new Exception("");
+            }
 
-            //TODO: Tratamento de erros e transação
+            SetAllColumns();
+            SetPrimaryKeyColumn(DbTransaction.Connection);
+
+            CreateTempTable(DbTransaction.Connection);
+            PopulateTempTable(DbTransaction.Connection);
+            ExecuteMergeCommand(DbTransaction.Connection);
 
             return "Deu boa!!";
         }
 
-        private void RunMerge()
+        //private void RunMerge()
+        //{
+        //    var mergeQuery = $"MERGE {_tableName} as tgt \n using (select * from #{_tableName}) as src on ";
+
+        //    foreach (var item in MergeColumns)
+        //        mergeQuery += $"tgt.{item} = src.{item} and ";
+        //    mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
+
+        //    mergeQuery += "\n when matched AND 1 = 1 then "; //TODO: Set conditions
+        //    mergeQuery += "\n update set ";
+
+        //    foreach (var item in UpdatedColumns)
+        //        mergeQuery += $"tgt.{item} = src.{item}, ";
+        //    mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
+
+        //    mergeQuery += "\n when not matched then ";
+        //    mergeQuery += "\n insert values (";
+        //    foreach (var item in UpdatedColumns)     //TODO: percorrer todas, não olhar só pra update (datasource tem tudo) 
+        //    {
+        //        mergeQuery += $"src.{item}, ";
+        //    }
+        //    mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
+        //    mergeQuery += ")";
+        //    mergeQuery += "\n output $action;";
+
+        //    var sqlCommand = DbTransaction.Connection.CreateCommand();
+
+        //    sqlCommand.Transaction = DbTransaction;
+        //    sqlCommand.CommandText = mergeQuery;
+
+        //    sqlCommand.ExecuteNonQuery();
+
+        //}
+
+        private void ExecuteMergeCommand(IDbConnection dbConnection)
         {
-            var mergeQuery = $"MERGE {_tableName} as tgt \n using (select * from #{_tableName}) as src on ";
+            var stringBuilderQuery = new StringBuilder($"MERGE {_tableName} as tgt \n using (select * from #{_tableName}) as src on ");
 
-            foreach (var item in _mergeColumns)
-                mergeQuery += $"tgt.{item} = src.{item} and ";
-            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
-
-            mergeQuery += "\n when matched ";
-            
-            if (_conditions is not null)
+            for(int i=0; i<MergeColumns.Count; i++)
             {
-                mergeQuery += " AND ";
-                foreach (var condition in _conditions)
-                    mergeQuery += $"src.{condition.Item1} {GetConditionText(condition.Item2)} tgt.{condition.Item1} and ";
+                stringBuilderQuery.Append($"tgt.{MergeColumns[i]} = src.{MergeColumns[i]}");
 
-                mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 5);
+                if(i != (MergeColumns.Count - 1))
+                {
+                    stringBuilderQuery.Append($" AND ");
+                }
             }
 
-            mergeQuery += " then ";             
-            mergeQuery += "\n update set ";
-            foreach (var item in _updatedColumns)
-                mergeQuery += $"tgt.{item} = src.{item}, ";
-            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
+            stringBuilderQuery.Append($"\n when matched");
 
-            mergeQuery += "\n when not matched then ";
-            mergeQuery += "\n insert values (";
+            for(int i = 0; i < Conditions.Count; i++)
+            {
+                var operation = Conditions[i].op.DisplayName();
+                var field = Conditions[i].field;
 
-            foreach (var item in _insertedColumns)            
-                mergeQuery += $"src.{item}, ";
-                        
-            mergeQuery = mergeQuery.Substring(0, mergeQuery.Length - 2);
-            mergeQuery += ")";
-            mergeQuery += "\n output $action;";
+                stringBuilderQuery.Append($" AND tgt.{field} {operation} src.{field}");
 
-            var sqlCommand = _dbTransaction.Connection.CreateCommand();
+                if(i != (Conditions.Count - 1))
+                {
+                    stringBuilderQuery.Append($" AND ");
+                }
+            }
 
-            sqlCommand.Transaction = _dbTransaction;
-            sqlCommand.CommandText = mergeQuery;
+            stringBuilderQuery.Append($" then \n update set ");
+
+            for(int i = 0; i < UpdatedColumns.Count; i++)
+            {
+                stringBuilderQuery.Append($"tgt.{UpdatedColumns[i]} = src.{UpdatedColumns[i]}");
+
+                if(i != (UpdatedColumns.Count - 1))
+                {
+                    stringBuilderQuery.Append($", ");
+                }
+            }
+
+            if(!string.IsNullOrWhiteSpace(StatusColumn))
+            {
+                stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkStatus.ALTERAR}'");
+            }
+
+            stringBuilderQuery.Append($"\n when not matched then \n insert values (");
+
+            var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+            for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
+            {
+                stringBuilderQuery.Append($"src.{allColumnsWithOutPrimaryKey[i]}");
+
+                if(i != (allColumnsWithOutPrimaryKey.Count - 1))
+                {
+                    stringBuilderQuery.Append($", ");
+                }
+            }
+
+            if(!string.IsNullOrWhiteSpace(StatusColumn))
+            {
+                stringBuilderQuery.Append($", '{BulkStatus.INSERIR}'");
+            }
+
+            stringBuilderQuery.Append($") \n output $action;");
+
+            var sqlCommand = dbConnection.CreateCommand();
+
+            sqlCommand.Transaction = DbTransaction;
+            sqlCommand.CommandText = stringBuilderQuery.ToString();
 
             sqlCommand.ExecuteNonQuery();
-
         }
 
-        private string GetConditionText(ConditionTypes condition)
+        private void CreateTempTable(IDbConnection dbConnection)
         {
-            return condition switch
-            {
-                ConditionTypes.EQUALS => "=",
-                ConditionTypes.NOT_EQUAL => "<>",
-                _ => ""
-            };
-        }
+            var sqlCommand = dbConnection.CreateCommand();
 
-        private void CreateTempTable()
-        {
-            var sqlCommand = _dbTransaction.Connection.CreateCommand();
-
-            sqlCommand.Transaction = _dbTransaction;
+            sqlCommand.Transaction = DbTransaction;
             sqlCommand.CommandText = $@"Select Top 0 * into #{_tableName} from {_tableName}";
 
             sqlCommand.ExecuteNonQuery();
         }
 
-        private void PopulateTempTable()
-        {
-            DataTable table = new DataTable();
-            table.TableName = _tableName;
+        //private void PopulateTempTable(IDbConnection dbConnection)
+        //{
+        //    var sqlCommand = dbConnection.CreateCommand();
 
-            using (var bulkInsert = new SqlBulkCopy(_dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, _dbTransaction as SqlTransaction))
+        //    sqlCommand.Transaction = DbTransaction;
+        //    var stringBuilderQuery = new StringBuilder($"insert into #{_tableName} values");
+
+        //    var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+        //    for (int k=0; k<DataSource.Count; k++)
+        //    {
+        //        stringBuilderQuery.Append($" (");
+
+        //        for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
+        //        {
+        //            bool isLastField = i == (allColumnsWithOutPrimaryKey.Count - 1);
+        //            stringBuilderQuery.Append($"{MergeBuilder<TEntity>.GetPropertieValue(DataSource[k], allColumnsWithOutPrimaryKey[i], isLastField)}");
+        //        }
+
+        //        string finalStr = k != (DataSource.Count - 1) ? ")," : ")";
+        //        stringBuilderQuery.Append(finalStr);
+        //    }
+
+        //    sqlCommand.CommandText = stringBuilderQuery.ToString();
+        //    sqlCommand.ExecuteNonQuery();
+        //}
+
+        private void PopulateTempTable(IDbConnection dbConnection)
+        {
+            DataTable table = new()
             {
-                bulkInsert.DestinationTableName = table.TableName;
+                TableName = _tableName
+            };
 
-                using (var dataReader = new ObjectDataReader<TEntity>(_dataSource.GetEnumerator()))
-                {
-                    bulkInsert.WriteToServer(dataReader);
-                }
-            }
-        }   
+            using var bulkInsert = new SqlBulkCopy(dbConnection as SqlConnection, SqlBulkCopyOptions.Default, DbTransaction as SqlTransaction);
+            bulkInsert.DestinationTableName = table.TableName;
 
-        private static IEnumerable<string> getAllPropertiesEntity()
-        {
-            var properties = typeof(TEntity).GetProperties();
-
-            foreach (var property in properties)
-                yield return property.Name;
-        }
-
-        private static string getPropertieValueToSql(TEntity itemDataSource, string propertyName)
-        {
-            var propertyDetails = itemDataSource?.GetType()?.GetProperty(propertyName)?.GetValue(itemDataSource, null);
-
-            if (propertyDetails == null)
-                return string.Empty;
-
-            if (propertyDetails.GetType().Name.Equals(typeof(string).Name) || propertyDetails.GetType().Name.Equals(typeof(DateTime).Name))
-                return $"'{propertyDetails}', ";
-            else
-                return $"{propertyDetails}, ";
+            using var dataReader = new ObjectDataReader<TEntity>(DataSource.GetEnumerator());
+            bulkInsert.WriteToServer(dataReader);
         }
 
         private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)
@@ -251,7 +353,7 @@ namespace Bulk
             var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
             
             foreach(var expression in GetColumns(expressions))
-                _conditions.Add((expression, enumValue));
+                Conditions.Add((expression, enumValue));
 
             return this;
         }
