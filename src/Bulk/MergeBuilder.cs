@@ -1,5 +1,7 @@
 ﻿using Bulk.Models;
 using Bulk.Models.Enumerators;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Update;
 using System.Data;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -15,6 +17,7 @@ namespace Bulk
         private List<string> MergeColumns { get; set; } = new();
         private List<string> UpdatedColumns { get; set; } = new();
         private List<(string field, ConditionTypes op)> Conditions { get; set; } = new();
+        private string PrimaryKeyColumn { get; set; } = string.Empty;
         private string StatusColumn { get; set; } = string.Empty;
         private List<TEntity> DataSource { get; set; } = new();
         private IDbTransaction? DbTransaction { get; set; }
@@ -43,13 +46,29 @@ namespace Bulk
             return this;
         }
 
-        public MergeBuilder<TEntity> SetAllColumns()
+        private void SetAllColumns()
         {
             var names = typeof(TEntity).GetProperties().Select(x => x.Name);
             AllColumns.AddRange(names);
-            
-            return this;
         }
+
+        private void SetPrimaryKeyColumn(IDbConnection dbConnection)
+        {
+            var query = @$"
+                SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE OBJECTPROPERTY(OBJECT_ID(CONSTRAINT_SCHEMA + '.' + QUOTENAME(CONSTRAINT_NAME)), 'IsPrimaryKey') = 1
+                AND TABLE_NAME = '{_tableName}'
+            ";
+
+            var sqlCommand = dbConnection.CreateCommand();
+
+            sqlCommand.Transaction = DbTransaction;
+            sqlCommand.CommandText = query;
+
+            var pkField = sqlCommand.ExecuteScalar();
+
+            PrimaryKeyColumn = pkField.ToString();
+        } 
 
         public MergeBuilder<TEntity> SetDataSource(List<TEntity> datasource)
         {
@@ -74,6 +93,9 @@ namespace Bulk
             {
                 throw new Exception("");
             }
+
+            SetAllColumns();
+            SetPrimaryKeyColumn(DbTransaction.Connection);
 
             CreateTempTable(DbTransaction.Connection);
             PopulateTempTable(DbTransaction.Connection);
@@ -149,24 +171,36 @@ namespace Bulk
 
             for(int i = 0; i < UpdatedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"tgt.{UpdatedColumns[i]} = src.{UpdatedColumns[i]}, ");
+                stringBuilderQuery.Append($"tgt.{UpdatedColumns[i]} = src.{UpdatedColumns[i]}");
 
-                if(i == (UpdatedColumns.Count - 1))
+                if(i != (UpdatedColumns.Count - 1))
                 {
-                    stringBuilderQuery.Append($"tgt.{StatusColumn} = {BulkStatus.ALTERAR}");
+                    stringBuilderQuery.Append($", ");
                 }
+            }
+
+            if(!string.IsNullOrWhiteSpace(StatusColumn))
+            {
+                stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkStatus.ALTERAR}'");
             }
 
             stringBuilderQuery.Append($"\n when not matched then \n insert values (");
 
-            for(int i = 0; i < AllColumns.Count; i++)
-            {
-                stringBuilderQuery.Append($"src.{AllColumns[i]}, ");
+            var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
 
-                if(i != (AllColumns.Count - 1))
+            for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
+            {
+                stringBuilderQuery.Append($"src.{allColumnsWithOutPrimaryKey[i]}");
+
+                if(i != (allColumnsWithOutPrimaryKey.Count - 1))
                 {
-                    stringBuilderQuery.Append($"{BulkStatus.INSERIR}");
+                    stringBuilderQuery.Append($", ");
                 }
+            }
+
+            if(!string.IsNullOrWhiteSpace(StatusColumn))
+            {
+                stringBuilderQuery.Append($", '{BulkStatus.INSERIR}'");
             }
 
             stringBuilderQuery.Append($") \n output $action;");
@@ -196,29 +230,27 @@ namespace Bulk
             sqlCommand.Transaction = DbTransaction;
             var stringBuilderQuery = new StringBuilder($"insert into #{_tableName} values");
 
-            foreach (var property in DataSource)
+            var allColumnsWithOutPrimaryKey = AllColumns.Where(x => !x.Equals(PrimaryKeyColumn, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+            for (int k=0; k<DataSource.Count; k++)
             {
                 stringBuilderQuery.Append($" (");
 
-                for(int i = 0; i < AllColumns.Count; i++)
+                for(int i = 0; i < allColumnsWithOutPrimaryKey.Count; i++)
                 {
-                    stringBuilderQuery.Append($"{MergeBuilder<TEntity>.GetPropertieValue(property, AllColumns[i])}");
-
-                    if(i != (AllColumns.Count - 1))
-                    {
-                        stringBuilderQuery.Append($", ");
-                    }
+                    bool isLastField = i == (allColumnsWithOutPrimaryKey.Count - 1);
+                    stringBuilderQuery.Append($"{MergeBuilder<TEntity>.GetPropertieValue(DataSource[k], allColumnsWithOutPrimaryKey[i], isLastField)}");
                 }
-                stringBuilderQuery.Append($"),");
-            }
 
-            stringBuilderQuery.Remove(0, stringBuilderQuery.Length - 1);
+                string finalStr = k != (DataSource.Count - 1) ? ")," : ")";
+                stringBuilderQuery.Append(finalStr);
+            }
 
             sqlCommand.CommandText = stringBuilderQuery.ToString();
             sqlCommand.ExecuteNonQuery();
         }   
 
-        private static string GetPropertieValue(TEntity property, string name)
+        private static string GetPropertieValue(TEntity property, string name, bool isLastField)
         {
             var propertyDetails = property?.GetType()?.GetProperty(name)?.GetValue(property, null);
 
@@ -226,9 +258,9 @@ namespace Bulk
                 return string.Empty;
 
             if (propertyDetails.GetType().Name.Equals(typeof(string).Name) || propertyDetails.GetType().Name.Equals(typeof(DateTime).Name))
-                return $"'{propertyDetails}', ";
+                return isLastField ? $"'{propertyDetails}'" : $"'{propertyDetails}', ";
             else
-                return $"{propertyDetails}, ";
+                return isLastField ? $"{propertyDetails}" : $"{propertyDetails}, ";
         }
 
         private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)
