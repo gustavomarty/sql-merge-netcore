@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Update;
 using System.Data;
 using System.Data.Common;
 using System.Linq.Expressions;
+using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
 using System.Text;
 

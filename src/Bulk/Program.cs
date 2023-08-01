@@ -3,6 +3,7 @@ using Bulk.Entities;
 using Bulk.Models.Enumerators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Bulk
 {
@@ -55,6 +56,7 @@ namespace Bulk
                 .SetDataSource(_listaPayload)
                 .SetMergeColumns(x => new { x.Campeonato, x.Nome })
                 .SetUpdatedColumns(x => new { x.DataAtualizacao, x.Campeonato, x.Nome, x.Titulos, x.Participacoes, x.Jogos, x.Vitorias, x.Derrotas, x.Empates })
+                .SetInsertedColumns(x => new { x.DataAtualizacao, x.Campeonato, x.Nome, x.Titulos, x.Participacoes, x.Jogos, x.Vitorias, x.Derrotas, x.Empates })
                 //.SetConditions(x =>
                 //    new ConditionBuilder { 
                 //        Conditions = new List<ConditionTypeDto>
