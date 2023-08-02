@@ -25,6 +25,9 @@ namespace ContractsApi.Data.Maps
             builder.Property(x => x.Apelido)
                 .HasMaxLength(50);
 
+            builder.Property(x => x.DataAlteracao)
+                .IsRequired();
+
             builder.HasIndex(x => x.Nome)
                 .IsUnique();
         }

@@ -102,7 +102,8 @@ namespace ContractsApi.Controllers
             {
                 Nome = x.Nome,
                 Abreviacao = x.Abreviacao,
-                Apelido = x.Apelido
+                Apelido = x.Apelido,
+                DataAlteracao = DateTime.Now
             }).ToList();
         }
 
@@ -111,7 +112,8 @@ namespace ContractsApi.Controllers
             return materialsDto.Select(x => new Material
             {
                 Nome = x.Nome,
-                Numero = x.Numero
+                Numero = x.Numero,
+                DataAlteracao = DateTime.Now
             }).ToList();
         }
 
@@ -121,7 +123,8 @@ namespace ContractsApi.Controllers
             {
                 Nome = x.Nome,
                 Documento = x.Documento,
-                Cep = x.Cep
+                Cep = x.Cep,
+                DataAlteracao = DateTime.Now
             }).ToList();
         }
 
@@ -140,7 +143,8 @@ namespace ContractsApi.Controllers
                 Preco = x.Preco,
                 Inicio = x.Inicio,
                 Fim = x.Fim,
-                Descricao = x.Descricao
+                Descricao = x.Descricao,
+                DataAlteracao = DateTime.Now
             }).ToList();
 
             return contracts;

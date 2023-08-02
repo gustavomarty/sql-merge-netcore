@@ -6,5 +6,6 @@
         public string Nome { get; set; }
         public string? Apelido { get; set; }
         public string Abreviacao { get; set; }
+        public DateTime DataAlteracao { get; set; }
     }
 }

@@ -38,6 +38,9 @@ namespace ContractsApi.Data.Maps
                 .HasMaxLength(5)
                 .IsRequired();
 
+            builder.Property(x => x.DataAlteracao)
+                .IsRequired();
+
             builder.HasOne(x => x.Material)
                 .WithMany()
                 .HasForeignKey(x => x.IdMaterial);
