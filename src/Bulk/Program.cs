@@ -56,17 +56,7 @@ namespace Bulk
                 .SetDataSource(_listaPayload)
                 .SetMergeColumns(x => new { x.Campeonato, x.Nome })
                 .SetUpdatedColumns(x => new { x.DataAtualizacao, x.Campeonato, x.Nome, x.Titulos, x.Participacoes, x.Jogos, x.Vitorias, x.Derrotas, x.Empates })
-                //.SetConditions(x =>
-                //    new ConditionBuilder { 
-                //        Conditions = new List<ConditionTypeDto>
-                //        {
-                //            new ConditionTypeDto { ConditionType = ConditionTypes.EQUALS, Field = x.Nome },
-                //            new ConditionTypeDto { ConditionType = ConditionTypes.EQUALS, Field = x.Campeonato }
-                //        }
-                //    }
-                //)
-                //.SetConditions(ConditionTypes.EQUALS, x => new { x.Campeonato, x.Nome })
-                //.SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.Jogos })
+                .SetIgnoreOnIsertOperation(x => new { x.Id })
                 .SetTransaction(transaction)
                 .Execute();
             
