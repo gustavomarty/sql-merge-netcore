@@ -43,6 +43,17 @@ namespace Bulk
             return this;
         }
 
+        public MergeBuilder<TEntity> SetConditions<TConditionType>(TConditionType conditionType, params Expression<Func<TEntity, object>>[] expressions)
+            where TConditionType : Enum
+        {
+            var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+
+            foreach(var expression in GetColumns(expressions))
+                Conditions.Add((expression, enumValue));
+
+            return this;
+        }
+
         public MergeBuilder<TEntity> SetIgnoreOnIsertOperation(params Expression<Func<TEntity, object>>[] expressions)
         {
             IgnoredOnInsertOperation.AddRange(GetColumns(expressions));
@@ -84,7 +95,6 @@ namespace Bulk
             return "Deu boa!!";
         }
 
-        
         private void ExecuteMergeCommand(IDbConnection dbConnection)
         {
             var allColumnsWithoutIgnoredInsert = AllColumns.Except(IgnoredOnInsertOperation).ToList();

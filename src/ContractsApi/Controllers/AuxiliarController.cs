@@ -87,19 +87,19 @@ namespace ContractsApi.Controllers
         [HttpGet("aux/contracts")]
         public async Task<IActionResult> GetContracts([FromQuery] FilterDto filterDto)
         {
-            var teamsIds = await _applicationContext.Set<Clube>().Select(x => x.Id).ToListAsync();
-            var materialsIds = await _applicationContext.Set<Material>().Select(x => x.Id).ToListAsync();
-            var supplierIds = await _applicationContext.Set<Fornecedor>().Select(x => x.Id).ToListAsync();
+            var teamNames = await _applicationContext.Set<Clube>().Select(x => x.Nome).ToListAsync();
+            var materialNumbers = await _applicationContext.Set<Material>().Select(x => x.Numero).ToListAsync();
+            var supplierDocuments = await _applicationContext.Set<Fornecedor>().Select(x => x.Documento).ToListAsync();
 
-            if(!teamsIds.Any() || !materialsIds.Any() || !supplierIds.Any())
+            if(!teamNames.Any() || !materialNumbers.Any() || !supplierDocuments.Any())
             {
                 return BadRequest("Você precisa ter dados nas outras tabelas");
             }
 
             var faker = new Faker<ContratoDto>("pt_BR")
-                .RuleFor(x => x.IdClube, f => f.PickRandom(teamsIds))
-                .RuleFor(x => x.IdMaterial, f => f.PickRandom(materialsIds))
-                .RuleFor(x => x.IdFornecedor, f => f.PickRandom(supplierIds))
+                .RuleFor(x => x.NomeClube, f => f.PickRandom(teamNames))
+                .RuleFor(x => x.NumeroMaterial, f => f.PickRandom(materialNumbers))
+                .RuleFor(x => x.DocumentoFornecedor, f => f.PickRandom(supplierDocuments))
                 .RuleFor(x => x.Numero, f => f.Random.Number(10000, 99999).ToString())
                 .RuleFor(x => x.Preco, f => decimal.Parse(f.Commerce.Price()))
                 .RuleFor(x => x.Inicio, f => f.Date.Recent())
@@ -107,7 +107,7 @@ namespace ContractsApi.Controllers
 
             var response = faker.Generate(filterDto.Quantidade);
 
-            var responseGroup = response.GroupBy(x => new { x.IdClube, x.IdFornecedor, x.IdMaterial })
+            var responseGroup = response.GroupBy(x => new { x.NomeClube, x.NumeroMaterial, x.DocumentoFornecedor, x.Numero })
                 .Select(g => g.First());
 
             return Ok(responseGroup);

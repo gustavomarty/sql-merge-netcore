@@ -2,9 +2,9 @@
 {
     public class ContratoDto
     {
-        public int IdFornecedor { get; set; }
-        public int IdMaterial { get; set; }
-        public int IdClube { get; set; }
+        public string DocumentoFornecedor { get; set; }
+        public string NumeroMaterial { get; set; }
+        public string NomeClube { get; set; }
         public string Numero { get; set; }
         public decimal Preco { get; set; }
         public DateTime Inicio { get; set; }
