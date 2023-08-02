@@ -1,8 +1,8 @@
 ﻿using System.Data;
+using Bulk.Extensions;
 using System.Linq.Expressions;
 using Bulk.Models.Enumerators;
 using Microsoft.Data.SqlClient;
-using System.Runtime.CompilerServices;
 
 namespace Bulk
 {
@@ -24,10 +24,10 @@ namespace Bulk
             _tableName = typeof(TEntity).Name;
         }
 
+        
         public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, object>> expression)
         {
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
-
             return this;
         }
 
@@ -64,9 +64,7 @@ namespace Bulk
         public MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
         {
             if(transaction == null || transaction.Connection == null)
-            {
                 throw new Exception("");
-            }
 
             DbTransaction = transaction;
             return this;
@@ -75,9 +73,7 @@ namespace Bulk
         public string Execute()
         {
             if(DbTransaction == null || DbTransaction.Connection == null)
-            {
                 throw new Exception("");
-            }
 
             SetAllColumns();
 
@@ -88,6 +84,7 @@ namespace Bulk
             return "Deu boa!!";
         }
 
+        
         private void ExecuteMergeCommand(IDbConnection dbConnection)
         {
             var allColumnsWithoutIgnoredInsert = AllColumns.Except(IgnoredOnInsertOperation).ToList();
@@ -127,63 +124,11 @@ namespace Bulk
 
         private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)
         {
-            var names = GetMemberNames(expressions);
+            var names = ExpressionExtension.GetMemberNames(expressions);
             if (names != null && names.Any())
-            {
                 return names;
-            }
 
-            return new ();
-        }
-
-        private static List<string> GetMemberNames<T>(params Expression<Func<T, object>>[] expressions)
-        {
-            if (expressions.Length == 1 && IsAnonymousType(expressions.First().Body.Type))
-            {
-                return expressions.First().Body.Type.GetProperties().Select(m => m.Name).ToList();
-            }
-
-            return expressions.Select(expression => GetMemberName(expression.Body)).ToList();
-        }
-
-        private static bool IsAnonymousType(Type type)
-        {
-            var hasCompilerGeneratedAttribute = type.GetCustomAttributes(typeof(CompilerGeneratedAttribute), false).Any();
-            var nameContainsAnonymousType = type.FullName != null && type.FullName.Contains("AnonymousType");
-            return hasCompilerGeneratedAttribute && nameContainsAnonymousType;
-        }
-
-        private static string GetMemberName(Expression expression)
-        {
-            return expression switch
-            {
-                null => throw new ArgumentException(""),
-                MemberExpression memberExpression => memberExpression.Member.Name,
-                MethodCallExpression methodCallExpression => methodCallExpression.Method.Name,
-                UnaryExpression unaryExpression => GetMemberName(unaryExpression),
-                _ => throw new ArgumentException(""),
-            };
-        }
-
-        private static string GetMemberName(UnaryExpression unaryExpression)
-        {
-            if (unaryExpression.Operand is MethodCallExpression methodExpression)
-            {
-                return methodExpression.Method.Name;
-            }
-
-            return ((MemberExpression)unaryExpression.Operand).Member.Name;
-        }
-
-        public MergeBuilder<TEntity> SetConditions<TConditionType>(TConditionType conditionType, params Expression<Func<TEntity, object>>[] expressions)
-            where TConditionType : Enum
-        {
-            var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-            
-            foreach(var expression in GetColumns(expressions))
-                Conditions.Add((expression, enumValue));
-
-            return this;
+            return new();
         }
     }
 }

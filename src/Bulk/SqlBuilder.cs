@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Bulk.Models;
+using Bulk.Extensions;
 using Bulk.Models.Enumerators;
 
 namespace Bulk

@@ -2,7 +2,7 @@
 using System.Data.Common;
 using System.Linq.Expressions;
 
-namespace Bulk
+namespace Bulk.Extensions
 {
     public class ObjectDataReader<T> : DbDataReader
     {
@@ -23,7 +23,7 @@ namespace Bulk
             _getPropValueFunc = new Func<T, object>[properties.Length];
 
             var ordinal = 0;
-            foreach(var name in properties.Select(x => x.Name))
+            foreach (var name in properties.Select(x => x.Name))
             {
                 var propertyName = name;
                 _propToOrdinalTable.Add(propertyName, ordinal);
@@ -50,7 +50,7 @@ namespace Bulk
 
         public override int GetOrdinal(string name)
         {
-            return (_propToOrdinalTable.TryGetValue(name, out var ordinal)) ? ordinal : -1;
+            return _propToOrdinalTable.TryGetValue(name, out var ordinal) ? ordinal : -1;
         }
 
         public override bool IsDBNull(int ordinal)
@@ -70,14 +70,14 @@ namespace Bulk
             try
             {
                 var max = Math.Min(values.Length, FieldCount);
-                for(; index < max; index++)
+                for (; index < max; index++)
                 {
                     values[index] = IsDBNull(index) ? DBNull.Value : GetValue(index);
                 }
 
                 return max;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new Exception($"Error in {typeof(T).Name}.GetValues, column index {index}, property {_ordinalToPropTable[index]}  ", e);
             }

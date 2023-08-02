@@ -1,8 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Reflection;
 using System.ComponentModel;
-using System.Reflection;
+using System.Collections.Concurrent;
 
-namespace Bulk.Models
+namespace Bulk.Extensions
 {
     public static class EnumExtensions
     {
@@ -12,7 +12,8 @@ namespace Bulk.Models
         {
             var key = $"{value.GetType().FullName}.{value}";
 
-            var displayName = _displayNameCache.GetOrAdd(key, x => {
+            var displayName = _displayNameCache.GetOrAdd(key, x =>
+            {
                 var name = (DescriptionAttribute[])value.GetType().GetTypeInfo().GetField(value.ToString()).GetCustomAttributes(typeof(DescriptionAttribute), false);
                 return name.Length > 0 ? name[0].Description : value.ToString();
             });
