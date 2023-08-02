@@ -8,7 +8,13 @@ namespace Bulk.Extensions
         public static List<string> GetMemberNames<T>(params Expression<Func<T, object>>[] expressions)
         {
             if (expressions.Length == 1 && IsAnonymousType(expressions.First().Body.Type))
+            {
                 return expressions.First().Body.Type.GetProperties().Select(m => m.Name).ToList();
+            }
+            else if(expressions.Length == 1 && expressions.First().Body.Type == typeof(T))
+            {
+                return expressions.First().Body.Type.GetProperties().Select(m => m.Name).ToList();
+            }
 
             return expressions.Select(expression => GetMemberName(expression.Body)).ToList();
         }

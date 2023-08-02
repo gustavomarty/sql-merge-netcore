@@ -1,6 +1,6 @@
-﻿using System.Text;
-using Bulk.Extensions;
+﻿using Bulk.Extensions;
 using Bulk.Models.Enumerators;
+using System.Text;
 
 namespace Bulk
 {
@@ -9,6 +9,15 @@ namespace Bulk
         public static string BuildTempTable(string tableName)
         {
             return $@"Select Top 0 * into #{tableName} from {tableName}";
+        }
+
+        public static string BuildPrimaryKeyQuery(string tableName)
+        {
+            return @$"
+                select column_name from information_schema.key_column_usage
+                where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1
+                and table_name = '{tableName}'
+            ";
         }
 
         public static StringBuilder BuildMerge(
@@ -53,9 +62,6 @@ namespace Bulk
                 var field = Conditions[i].field;
 
                 stringBuilderQuery.Append($" AND tgt.{field} {operation} src.{field}");
-
-                if (i != (Conditions.Count - 1))
-                    stringBuilderQuery.Append(" AND ");
             }
         }
         private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn)

@@ -16,6 +16,7 @@ namespace Bulk
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
         private List<(string field, ConditionTypes op)> Conditions { get; set; } = new();
         private string StatusColumn { get; set; } = string.Empty;
+        private string PrimaryKey { get; set; } = string.Empty;
         private List<TEntity> DataSource { get; set; } = new();
         private IDbTransaction? DbTransaction { get; set; }
 
@@ -23,7 +24,6 @@ namespace Bulk
         {
             _tableName = typeof(TEntity).Name;
         }
-
         
         public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, object>> expression)
         {
@@ -66,6 +66,20 @@ namespace Bulk
             AllColumns.AddRange(names);
         }
 
+        private void SetPrimaryKeyColumn(IDbConnection dbConnection)
+        {
+            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName);
+
+            var sqlCommand = dbConnection.CreateCommand();
+
+            sqlCommand.Transaction = DbTransaction;
+            sqlCommand.CommandText = query;
+
+            var pkField = sqlCommand.ExecuteScalar();
+
+            PrimaryKey = pkField?.ToString() ?? string.Empty;
+        }
+
         public MergeBuilder<TEntity> SetDataSource(List<TEntity> datasource)
         {
             DataSource = datasource;
@@ -81,12 +95,15 @@ namespace Bulk
             return this;
         }
 
+        
+
         public string Execute()
         {
             if(DbTransaction == null || DbTransaction.Connection == null)
                 throw new Exception("");
 
             SetAllColumns();
+            SetPrimaryKeyColumn(DbTransaction.Connection);
 
             CreateTempTable(DbTransaction.Connection);
             PopulateTempTable(DbTransaction.Connection);
@@ -98,8 +115,9 @@ namespace Bulk
         private void ExecuteMergeCommand(IDbConnection dbConnection)
         {
             var allColumnsWithoutIgnoredInsert = AllColumns.Except(IgnoredOnInsertOperation).ToList();
+            var allColumnsWithoutIgnoredUpdate = UpdatedColumns.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, UpdatedColumns, allColumnsWithoutIgnoredInsert, Conditions, StatusColumn);
+            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, allColumnsWithoutIgnoredUpdate, allColumnsWithoutIgnoredInsert, Conditions, StatusColumn);
             var sqlCommand = dbConnection.CreateCommand();
 
             sqlCommand.Transaction = DbTransaction;
