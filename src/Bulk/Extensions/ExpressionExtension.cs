@@ -13,7 +13,10 @@ namespace Bulk.Extensions
             }
             else if(expressions.Length == 1 && expressions.First().Body.Type == typeof(T))
             {
-                return expressions.First().Body.Type.GetProperties().Select(m => m.Name).ToList();
+                var properties = expressions.First().Body.Type.GetProperties();
+                properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
+                
+                return properties.Select(x => x.Name).ToList();
             }
 
             return expressions.Select(expression => GetMemberName(expression.Body)).ToList();

@@ -5,7 +5,6 @@ using ContractsApi.Models.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Newtonsoft.Json;
 using Context = ContractsApi.Data.ApplicationContext;
 
 namespace ContractsApi.Controllers
@@ -30,11 +29,14 @@ namespace ContractsApi.Controllers
             var builder = new MergeBuilder<Clube>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
+                .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Nome)
                 .SetUpdatedColumns(x => x)
                 .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Nome)
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
+
+            transaction.Commit();
 
             return NoContent();
         }
@@ -49,11 +51,14 @@ namespace ContractsApi.Controllers
             var builder = new MergeBuilder<Material>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
+                .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Numero)
                 .SetUpdatedColumns(x => x)
                 .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Numero)
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
+
+            transaction.Commit();
 
             return NoContent();
         }
@@ -68,11 +73,14 @@ namespace ContractsApi.Controllers
             var builder = new MergeBuilder<Fornecedor>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
+                .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)
                 .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Documento)
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
+
+            transaction.Commit();
 
             return NoContent();
         }
@@ -87,11 +95,14 @@ namespace ContractsApi.Controllers
             var builder = new MergeBuilder<Contrato>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
+                .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
                 .SetUpdatedColumns(x => x)
                 .SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
+
+            transaction.Commit();
 
             return NoContent();
         }

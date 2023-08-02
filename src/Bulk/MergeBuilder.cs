@@ -1,30 +1,39 @@
-﻿using System.Data;
-using Bulk.Extensions;
-using System.Linq.Expressions;
+﻿using Bulk.Extensions;
 using Bulk.Models.Enumerators;
 using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Linq.Expressions;
 
 namespace Bulk
 {
     public class MergeBuilder<TEntity> where TEntity : class
     {
-        private readonly string _tableName;
+        private string _tableName;
+
+        private string StatusColumn { get; set; } = string.Empty;
+        private string PrimaryKey { get; set; } = string.Empty;
+        private bool SnakeCaseNamingConvention { get; set; }
+
+        private List<TEntity> DataSource { get; set; } = new();
+        private IDbTransaction? DbTransaction { get; set; }
 
         private List<string> AllColumns { get; set; } = new();
         private List<string> MergedColumns { get; set; } = new();
         private List<string> UpdatedColumns { get; set; } = new();
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
         private List<(string field, ConditionTypes op)> Conditions { get; set; } = new();
-        private string StatusColumn { get; set; } = string.Empty;
-        private string PrimaryKey { get; set; } = string.Empty;
-        private List<TEntity> DataSource { get; set; } = new();
-        private IDbTransaction? DbTransaction { get; set; }
 
         public MergeBuilder()
         {
             _tableName = typeof(TEntity).Name;
         }
-        
+
+        public MergeBuilder<TEntity> UseSnakeCaseNamingConvention()
+        {
+            SnakeCaseNamingConvention = true;
+            return this;
+        }
+
         public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, object>> expression)
         {
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
@@ -62,7 +71,14 @@ namespace Bulk
 
         private void SetAllColumns()
         {
-            var names = typeof(TEntity).GetProperties().Select(x => x.Name);
+            var properties = typeof(TEntity).GetProperties();
+            properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
+
+            var names = properties.Select(x => x.Name);
+
+            if(SnakeCaseNamingConvention)
+                names = names.Select(x => x.ToSnakeCase());
+
             AllColumns.AddRange(names);
         }
 
@@ -78,6 +94,9 @@ namespace Bulk
             var pkField = sqlCommand.ExecuteScalar();
 
             PrimaryKey = pkField?.ToString() ?? string.Empty;
+
+            if(SnakeCaseNamingConvention)
+                PrimaryKey = PrimaryKey.ToSnakeCase();
         }
 
         public MergeBuilder<TEntity> SetDataSource(List<TEntity> datasource)
@@ -105,6 +124,8 @@ namespace Bulk
             SetAllColumns();
             SetPrimaryKeyColumn(DbTransaction.Connection);
 
+            CheckSnakeCaseOnExecuteCommand();
+
             CreateTempTable(DbTransaction.Connection);
             PopulateTempTable(DbTransaction.Connection);
             ExecuteMergeCommand(DbTransaction.Connection);
@@ -124,6 +145,20 @@ namespace Bulk
             sqlCommand.CommandText = stringBuilderQuery.ToString();
 
             sqlCommand.ExecuteNonQuery();
+        }
+
+        private void CheckSnakeCaseOnExecuteCommand()
+        {
+            if(!SnakeCaseNamingConvention)
+                return;
+
+            _tableName = _tableName.ToSnakeCase();
+            StatusColumn = StatusColumn.ToSnakeCase();
+
+            IgnoredOnInsertOperation = IgnoredOnInsertOperation.Select(x => x.ToSnakeCase()).ToList();
+            UpdatedColumns = UpdatedColumns.Select(x => x.ToSnakeCase()).ToList();
+            MergedColumns = MergedColumns.Select(x => x.ToSnakeCase()).ToList();
+            Conditions = Conditions.Select(x => (x.field.ToSnakeCase(), x.op)).ToList();
         }
 
         private void CreateTempTable(IDbConnection dbConnection)

@@ -102,8 +102,8 @@ namespace ContractsApi.Controllers
                 .RuleFor(x => x.DocumentoFornecedor, f => f.PickRandom(supplierDocuments))
                 .RuleFor(x => x.Numero, f => f.Random.Number(10000, 99999).ToString())
                 .RuleFor(x => x.Preco, f => decimal.Parse(f.Commerce.Price()))
-                .RuleFor(x => x.Inicio, f => f.Date.Recent())
-                .RuleFor(x => x.Inicio, f => f.Date.Future(10));
+                .RuleFor(x => x.Inicio, f => f.Date.Recent(365))
+                .RuleFor(x => x.Fim, f => f.Date.Future(10));
 
             var response = faker.Generate(filterDto.Quantidade);
 
