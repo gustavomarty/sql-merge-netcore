@@ -25,7 +25,7 @@ namespace Bulk
             List<string> MergedColumns, 
             List<string> UpdatedColumns, 
             List<string> InsertedColumns,
-            List<(string field, ConditionTypes op)> Conditions,
+            List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> Conditions,
             string StatusColumn)
         {
             var stringBuilderQuery = new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ");
@@ -44,6 +44,12 @@ namespace Bulk
 
             return stringBuilderQuery;
         }
+
+        public static string BuildDropTempTable(string tableName)
+        {
+            return $@"drop table #{tableName}";
+        }
+
         private static void BuildMergedColumns(StringBuilder stringBuilderQuery, List<string> MergedColumns)
         {
             for (int i = 0; i < MergedColumns.Count; i++)
@@ -54,14 +60,27 @@ namespace Bulk
                     stringBuilderQuery.Append(" AND ");
             }
         }
-        private static void BuildConditions(StringBuilder stringBuilderQuery, List<(string field, ConditionTypes op)> Conditions)
+        private static void BuildConditions(StringBuilder stringBuilderQuery, List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> conditions)
         {
-            for (int i = 0; i < Conditions.Count; i++)
+            for (int i = 0; i < conditions.Count; i++)
             {
-                var operation = Conditions[i].op.DisplayName();
-                var field = Conditions[i].field;
+                stringBuilderQuery.Append(" AND (");
 
-                stringBuilderQuery.Append($" AND tgt.{field} {operation} src.{field}");
+                for(int j = 0; j < conditions[i].fields.Count; j++)
+                {
+                    var cType = conditions[i].cType.DisplayName();
+                    var cOperator = conditions[i].cOperator.DisplayName();
+                    var field = conditions[i].fields[j];
+
+                    if(j != 0)
+                    {
+                        stringBuilderQuery.Append($" {cOperator} ");
+                    }
+                    
+                    stringBuilderQuery.Append($"tgt.{field} {cType} src.{field}");
+                }
+
+                stringBuilderQuery.Append(')');
             }
         }
         private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn)

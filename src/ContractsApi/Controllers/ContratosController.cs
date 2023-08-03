@@ -19,6 +19,34 @@ namespace ContractsApi.Controllers
             _context = context;
         }
 
+        [HttpGet("contracts/teams")]
+        public async Task<IActionResult> GetTeams()
+        {
+            var teams = await _context.Set<Clube>().ToListAsync();
+            return Ok(teams);
+        }
+
+        [HttpGet("contracts/materials")]
+        public async Task<IActionResult> GetMaterials()
+        {
+            var materials = await _context.Set<Material>().ToListAsync();
+            return Ok(materials);
+        }
+
+        [HttpGet("contracts/suppliers")]
+        public async Task<IActionResult> GetSuppliers()
+        {
+            var suppliers = await _context.Set<Fornecedor>().ToListAsync();
+            return Ok(suppliers);
+        }
+
+        [HttpGet("contracts")]
+        public async Task<IActionResult> Get()
+        {
+            var contracts = await _context.Set<Contrato>().ToListAsync();
+            return Ok(contracts);
+        }
+
         [HttpPost("contracts/teams")]
         public async Task<IActionResult> PostTeams([FromBody] List<TeamDto> teamsDto)
         {
@@ -32,7 +60,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Nome)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Nome)
+                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Abreviacao, x.Apelido })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -54,7 +82,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Numero)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Numero)
+                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => x.Nome)
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -76,7 +104,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => x.Documento)
+                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -98,7 +126,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
+                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Fim, x.Inicio, x.Preco })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 

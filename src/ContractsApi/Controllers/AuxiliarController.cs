@@ -7,6 +7,8 @@ using ContractsApi.Models.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using System;
+using System.Diagnostics.Contracts;
 
 namespace ContractsApi.Controllers
 {
@@ -22,7 +24,7 @@ namespace ContractsApi.Controllers
             _applicationContext = applicationContext;
         }
 
-        [HttpGet("aux/teams/real")]
+        [HttpGet("aux/teams/real/new")]
         public IActionResult GetRealTeams([FromQuery] FilterDto filterDto)
         {
             var jsonSerializerSettings = new JsonSerializerSettings
@@ -37,55 +39,242 @@ namespace ContractsApi.Controllers
             return Ok(teamList);
         }
 
-        [HttpGet("aux/teams/fake")]
+        [HttpGet("aux/teams/fake/new")]
         public IActionResult GetFakeTeams([FromQuery] FilterDto filterDto)
+        {
+            var teams = GetNewFakeTeams(filterDto.Quantidade);
+            return Ok(teams);
+        }
+
+        [HttpGet("aux/materials/new")]
+        public IActionResult GetMaterials([FromQuery] FilterDto filterDto)
+        {
+            var materials = GetNewFakeMaterials(filterDto.Quantidade);
+            return Ok(materials);
+        }
+
+        [HttpGet("aux/suppliers/new")]
+        public IActionResult GetSuppliers([FromQuery] FilterDto filterDto)
+        {
+            var suppliers = GetNewFakeSuppliers(filterDto.Quantidade);
+            return Ok(suppliers);
+        }
+
+        [HttpGet("aux/contracts/new")]
+        public async Task<IActionResult> GetContracts([FromQuery] FilterDto filterDto)
+        {
+            var contracts = await GetNewFakeContracts(filterDto.Quantidade);
+
+            if(!contracts.Any())
+                return BadRequest("Você precisa ter dados nas outras tabelas");
+
+            return Ok(contracts);
+        }
+
+        [HttpGet("aux/teams/mix")]
+        public async Task<IActionResult> GetMixTeams([FromQuery] FilterDto filterDto, [FromQuery] bool withChanges)
+        {
+            var existingTeams = await _applicationContext.Set<Clube>().ToListAsync();
+
+            var quantityForGenerateTeams = filterDto.Quantidade / 2;
+            var quantityForExistingTeams = filterDto.Quantidade / 2;
+
+            if(existingTeams.Count < quantityForGenerateTeams)
+            {
+                quantityForExistingTeams = existingTeams.Count;
+                quantityForGenerateTeams += (quantityForGenerateTeams - existingTeams.Count);
+            }
+
+            var newTeams = GetNewFakeTeams(quantityForGenerateTeams);
+            existingTeams.Shuffle();
+
+            existingTeams = existingTeams.Take(quantityForExistingTeams).ToList();
+
+
+            List<TeamDto> result = new();
+            result.AddRange(newTeams);
+            result.AddRange(existingTeams.Select(x => {
+                
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new TeamDto
+                {
+                    Nome = x.Nome,
+                    Abreviacao = x.Abreviacao,
+                    Apelido = changeItems ? $"ALTERADO: {x.Apelido}" : x.Apelido ?? string.Empty
+                };
+            }));
+
+            return Ok(result);
+        }
+
+        [HttpGet("aux/materials/mix")]
+        public async Task<IActionResult> GetMixMaterials([FromQuery] FilterDto filterDto, [FromQuery] bool withChanges)
+        {
+            var existingMaterials = await _applicationContext.Set<Material>().ToListAsync();
+
+            var quantityForGenerateMaterials = filterDto.Quantidade / 2;
+            var quantityForExistingMaterials = filterDto.Quantidade / 2;
+
+            if(existingMaterials.Count < quantityForGenerateMaterials)
+            {
+                quantityForExistingMaterials = existingMaterials.Count;
+                quantityForGenerateMaterials += (quantityForGenerateMaterials - existingMaterials.Count);
+            }
+
+            var newMaterials = GetNewFakeMaterials(quantityForGenerateMaterials);
+            existingMaterials.Shuffle();
+
+            existingMaterials = existingMaterials.Take(quantityForExistingMaterials).ToList();
+
+
+            List<MaterialDto> result = new();
+            result.AddRange(newMaterials);
+            result.AddRange(existingMaterials.Select(x => {
+
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new MaterialDto
+                {
+                    Nome = changeItems ? $"ALTERADO: {x.Nome}" : x.Nome,
+                    Numero = x.Numero
+                };
+            }));
+
+            return Ok(result);
+        }
+
+        [HttpGet("aux/suppliers/mix")]
+        public async Task<IActionResult> GetMixSuppliers([FromQuery] FilterDto filterDto, [FromQuery] bool withChanges)
+        {
+            var existingData = await _applicationContext.Set<Fornecedor>().ToListAsync();
+
+            var quantityForGenerateData = filterDto.Quantidade / 2;
+            var quantityForExistingData = filterDto.Quantidade / 2;
+
+            if(existingData.Count < quantityForGenerateData)
+            {
+                quantityForExistingData = existingData.Count;
+                quantityForGenerateData += (quantityForGenerateData - existingData.Count);
+            }
+
+            var newData = GetNewFakeSuppliers(quantityForGenerateData);
+            existingData.Shuffle();
+
+            existingData = existingData.Take(quantityForExistingData).ToList();
+
+
+            List<FornecedorDto> result = new();
+            result.AddRange(newData);
+            result.AddRange(existingData.Select(x => {
+
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new FornecedorDto
+                {
+                    Nome = changeItems ? $"ALTERADO: {x.Nome}" : x.Nome,
+                    Documento = x.Documento,
+                    Cep = x.Cep
+                };
+            }));
+
+            return Ok(result);
+        }
+
+        [HttpGet("aux/contracts/mix")]
+        public async Task<IActionResult> GetMixContracts([FromQuery] FilterDto filterDto, [FromQuery] bool withChanges)
+        {
+            var existingData = await _applicationContext.Set<Contrato>().ToListAsync();
+
+            var quantityForGenerateData = filterDto.Quantidade / 2;
+            var quantityForExistingData = filterDto.Quantidade / 2;
+
+            if(existingData.Count < quantityForGenerateData)
+            {
+                quantityForExistingData = existingData.Count;
+                quantityForGenerateData += (quantityForGenerateData - existingData.Count);
+            }
+
+            var newData = await GetNewFakeContracts(quantityForGenerateData);
+            if(!newData.Any())
+                return BadRequest("Você precisa ter dados nas outras tabelas");
+
+                existingData.Shuffle();
+
+            existingData = existingData.Take(quantityForExistingData).ToList();
+
+
+            List<ContratoDto> result = new();
+            result.AddRange(newData);
+            result.AddRange(existingData.Select(x => {
+
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new ContratoDto
+                {
+                    Descricao = changeItems ? $"ALTERADO: {x.Descricao}" : x.Descricao,
+                    DocumentoFornecedor = x.Fornecedor.Documento,
+                    NomeClube = x.Clube.Nome,
+                    NumeroMaterial = x.Material.Numero,
+                    Numero = x.Numero,
+                    Inicio = x.Inicio,
+                    Fim = x.Fim,
+                    Preco = x.Preco
+                };
+            }));
+
+            return Ok(result);
+        }
+
+        private static List<TeamDto> GetNewFakeTeams(int quantity)
         {
             var faker = new Faker<TeamDto>("pt_BR")
                 .RuleFor(x => x.Nome, f => f.Company.CompanyName())
                 .RuleFor(x => x.Abreviacao, f => f.Company.CompanyName()[..3].ToUpper())
                 .RuleFor(x => x.Apelido, string.Empty);
 
-            var response = faker.Generate(filterDto.Quantidade);
+            var response = faker.Generate(quantity);
 
             var responseGroup = response.GroupBy(x => x.Nome)
                 .Select(g => g.First());
 
-            return Ok(responseGroup);
+            return responseGroup.ToList();
         }
 
-        [HttpGet("aux/materials")]
-        public IActionResult GetMaterials([FromQuery] FilterDto filterDto)
+        private static List<MaterialDto> GetNewFakeMaterials(int quantity)
         {
             var faker = new Faker<MaterialDto>("pt_BR")
                 .RuleFor(x => x.Nome, f => f.Commerce.ProductName())
                 .RuleFor(x => x.Numero, f => f.Random.Number(0, 99999).ToString().PadLeft(5, '0'));
 
-            var response = faker.Generate(filterDto.Quantidade);
+            var response = faker.Generate(quantity);
 
             var responseGroup = response.GroupBy(x => x.Numero)
                 .Select(g => g.First());
 
-            return Ok(responseGroup);
+            return responseGroup.ToList();
         }
 
-        [HttpGet("aux/suppliers")]
-        public IActionResult GetSuppliers([FromQuery] FilterDto filterDto)
+        private static List<FornecedorDto> GetNewFakeSuppliers(int quantity)
         {
             var faker = new Faker<FornecedorDto>("pt_BR")
                 .RuleFor(x => x.Nome, f => f.Company.CompanyName())
                 .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
                 .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
 
-            var response = faker.Generate(filterDto.Quantidade);
+            var response = faker.Generate(quantity);
 
             var responseGroup = response.GroupBy(x => x.Documento)
                 .Select(g => g.First());
 
-            return Ok(responseGroup);
+            return responseGroup.ToList();
         }
 
-        [HttpGet("aux/contracts")]
-        public async Task<IActionResult> GetContracts([FromQuery] FilterDto filterDto)
+        private async Task<List<ContratoDto>> GetNewFakeContracts(int quantity)
         {
             var teamNames = await _applicationContext.Set<Clube>().Select(x => x.Nome).ToListAsync();
             var materialNumbers = await _applicationContext.Set<Material>().Select(x => x.Numero).ToListAsync();
@@ -93,7 +282,7 @@ namespace ContractsApi.Controllers
 
             if(!teamNames.Any() || !materialNumbers.Any() || !supplierDocuments.Any())
             {
-                return BadRequest("Você precisa ter dados nas outras tabelas");
+                return new List<ContratoDto>();
             }
 
             var faker = new Faker<ContratoDto>("pt_BR")
@@ -105,12 +294,12 @@ namespace ContractsApi.Controllers
                 .RuleFor(x => x.Inicio, f => f.Date.Recent(365))
                 .RuleFor(x => x.Fim, f => f.Date.Future(10));
 
-            var response = faker.Generate(filterDto.Quantidade);
+            var response = faker.Generate(quantity);
 
             var responseGroup = response.GroupBy(x => new { x.NomeClube, x.NumeroMaterial, x.DocumentoFornecedor, x.Numero })
                 .Select(g => g.First());
 
-            return Ok(responseGroup);
+            return responseGroup.ToList();
         }
     }
 

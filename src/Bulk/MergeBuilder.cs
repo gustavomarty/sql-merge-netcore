@@ -21,7 +21,7 @@ namespace Bulk
         private List<string> MergedColumns { get; set; } = new();
         private List<string> UpdatedColumns { get; set; } = new();
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
-        private List<(string field, ConditionTypes op)> Conditions { get; set; } = new();
+        private List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> Conditions { get; set; } = new();
 
         public MergeBuilder()
         {
@@ -52,13 +52,15 @@ namespace Bulk
             return this;
         }
 
-        public MergeBuilder<TEntity> SetConditions<TConditionType>(TConditionType conditionType, params Expression<Func<TEntity, object>>[] expressions)
+        public MergeBuilder<TEntity> SetConditions<TConditionType, TConditionOperator>(TConditionType conditionType, TConditionOperator conditionOperator, params Expression<Func<TEntity, object>>[] expressions)
             where TConditionType : Enum
+            where TConditionOperator : Enum
         {
-            var enumValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var cOperatorValue = (ConditionOperator)Enum.Parse(typeof(TConditionOperator), conditionOperator.ToString());
+            var columns = GetColumns(expressions);
 
-            foreach(var expression in GetColumns(expressions))
-                Conditions.Add((expression, enumValue));
+            Conditions.Add((columns, cTypeValue, cOperatorValue));
 
             return this;
         }
@@ -130,6 +132,8 @@ namespace Bulk
             PopulateTempTable(DbTransaction.Connection);
             ExecuteMergeCommand(DbTransaction.Connection);
 
+            DropTempTable(DbTransaction.Connection);
+
             return "Deu boa!!";
         }
 
@@ -158,7 +162,7 @@ namespace Bulk
             IgnoredOnInsertOperation = IgnoredOnInsertOperation.Select(x => x.ToSnakeCase()).ToList();
             UpdatedColumns = UpdatedColumns.Select(x => x.ToSnakeCase()).ToList();
             MergedColumns = MergedColumns.Select(x => x.ToSnakeCase()).ToList();
-            Conditions = Conditions.Select(x => (x.field.ToSnakeCase(), x.op)).ToList();
+            Conditions = Conditions.Select(x => (x.fields.Select(y => y.ToSnakeCase()).ToList(), x.cType, x.cOperator)).ToList();
         }
 
         private void CreateTempTable(IDbConnection dbConnection)
@@ -175,7 +179,7 @@ namespace Bulk
         {
             DataTable table = new()
             {
-                TableName = _tableName
+                TableName = $"#{_tableName}"
             };
 
             using var bulkInsert = new SqlBulkCopy(dbConnection as SqlConnection, SqlBulkCopyOptions.Default, DbTransaction as SqlTransaction);
@@ -183,6 +187,16 @@ namespace Bulk
 
             using var dataReader = new ObjectDataReader<TEntity>(DataSource.GetEnumerator());
             bulkInsert.WriteToServer(dataReader);
+        }
+
+        private void DropTempTable(IDbConnection dbConnection)
+        {
+            var sqlCommand = dbConnection.CreateCommand();
+
+            sqlCommand.Transaction = DbTransaction;
+            sqlCommand.CommandText = SqlBuilder.BuildDropTempTable(_tableName);
+
+            sqlCommand.ExecuteNonQuery();
         }
 
         private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)

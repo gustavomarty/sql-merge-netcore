@@ -56,7 +56,6 @@ namespace Bulk
                 .SetDataSource(_listaPayload)
                 .SetMergeColumns(x => new { x.Campeonato, x.Nome })
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, x => new { x.Campeonato, x.Nome })
                 .SetIgnoreOnIsertOperation(x => new { x.Id })
                 .SetTransaction(transaction)
                 .Execute();
