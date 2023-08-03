@@ -1,4 +1,5 @@
 ﻿using Bulk.Extensions;
+using Bulk.Models;
 using Bulk.Models.Enumerators;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -21,7 +22,8 @@ namespace Bulk
         private List<string> MergedColumns { get; set; } = new();
         private List<string> UpdatedColumns { get; set; } = new();
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
-        private List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> Conditions { get; set; } = new();
+
+        private List<ConditionBuilder> Conditions { get; set; } = new();
 
         public MergeBuilder()
         {
@@ -60,7 +62,8 @@ namespace Bulk
             var cOperatorValue = (ConditionOperator)Enum.Parse(typeof(TConditionOperator), conditionOperator.ToString());
             var columns = GetColumns(expressions);
 
-            Conditions.Add((columns, cTypeValue, cOperatorValue));
+            var condition = new ConditionBuilder(columns ?? new List<string>(), cTypeValue, cOperatorValue);
+            Conditions.Add(condition);
 
             return this;
         }
@@ -160,7 +163,11 @@ namespace Bulk
             IgnoredOnInsertOperation = IgnoredOnInsertOperation.Select(x => x.ToSnakeCase()).ToList();
             UpdatedColumns = UpdatedColumns.Select(x => x.ToSnakeCase()).ToList();
             MergedColumns = MergedColumns.Select(x => x.ToSnakeCase()).ToList();
-            Conditions = Conditions.Select(x => (x.fields.Select(y => y.ToSnakeCase()).ToList(), x.cType, x.cOperator)).ToList();
+
+            Conditions = Conditions.Select(x => {
+                var fields = x.Fields.Select(y => y.ToSnakeCase()).ToList();
+                return new ConditionBuilder(fields, x.ConditionType, x.ConditionOperator);
+            }).ToList();
         }
 
         private void CreateTempTable(IDbConnection dbConnection)

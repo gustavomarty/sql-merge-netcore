@@ -1,4 +1,5 @@
 ﻿using Bulk.Extensions;
+using Bulk.Models;
 using Bulk.Models.Enumerators;
 using System.Text;
 
@@ -22,23 +23,24 @@ namespace Bulk
 
         public static StringBuilder BuildMerge(
             string tableName, 
-            List<string> MergedColumns, 
-            List<string> UpdatedColumns, 
-            List<string> InsertedColumns,
-            List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> Conditions,
-            string StatusColumn)
+            List<string> mergedColumns, 
+            List<string> updatedColumns, 
+            List<string> insertedColumns,
+            List<ConditionBuilder> conditions,
+            string statusColumn
+        )
         {
             var stringBuilderQuery = new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ");
-            BuildMergedColumns(stringBuilderQuery, MergedColumns);
+            BuildMergedColumns(stringBuilderQuery, mergedColumns);
 
             stringBuilderQuery.Append($"\n when matched");
-            BuildConditions(stringBuilderQuery, Conditions);
+            BuildConditions(stringBuilderQuery, conditions);
 
             stringBuilderQuery.Append($" then \n update set ");
-            BuildUpdatedColumns(stringBuilderQuery, UpdatedColumns, StatusColumn);
+            BuildUpdatedColumns(stringBuilderQuery, updatedColumns, statusColumn);
 
             stringBuilderQuery.Append($"\n when not matched then \n insert values (");
-            BuildInsertedColumns(stringBuilderQuery, InsertedColumns, StatusColumn);
+            BuildInsertedColumns(stringBuilderQuery, insertedColumns, statusColumn);
 
             BuildOutput(stringBuilderQuery);
 
@@ -60,17 +62,17 @@ namespace Bulk
                     stringBuilderQuery.Append(" AND ");
             }
         }
-        private static void BuildConditions(StringBuilder stringBuilderQuery, List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> conditions)
+        private static void BuildConditions(StringBuilder stringBuilderQuery, List<ConditionBuilder> conditions)
         {
             for (int i = 0; i < conditions.Count; i++)
             {
                 stringBuilderQuery.Append(" AND (");
 
-                for(int j = 0; j < conditions[i].fields.Count; j++)
+                for(int j = 0; j < conditions[i].Fields.Count; j++)
                 {
-                    var cType = conditions[i].cType.DisplayName();
-                    var cOperator = conditions[i].cOperator.DisplayName();
-                    var field = conditions[i].fields[j];
+                    var cType = conditions[i].ConditionType.DisplayName();
+                    var cOperator = conditions[i].ConditionOperator.DisplayName();
+                    var field = conditions[i].Fields[j];
 
                     if(j != 0)
                     {
