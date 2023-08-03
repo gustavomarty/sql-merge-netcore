@@ -116,8 +116,6 @@ namespace Bulk
             return this;
         }
 
-        
-
         public string Execute()
         {
             if(DbTransaction == null || DbTransaction.Connection == null)
