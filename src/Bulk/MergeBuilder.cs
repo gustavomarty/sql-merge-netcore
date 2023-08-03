@@ -36,31 +36,38 @@ namespace Bulk
             return this;
         }
 
-        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, object>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, ColumnType>> expression)
+            where ColumnType : struct
         {
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
             return this;
         }
 
-        public MergeBuilder<TEntity> SetMergeColumns(params Expression<Func<TEntity, object>>[] expressions)
+        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, string>> expression)
         {
-            MergedColumns.AddRange(GetColumns(expressions));
+            StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
             return this;
         }
 
-        public MergeBuilder<TEntity> SetUpdatedColumns(params Expression<Func<TEntity, object>>[] expressions)
+        public MergeBuilder<TEntity> SetMergeColumns(Expression<Func<TEntity, object>> expression)
         {
-            UpdatedColumns.AddRange(GetColumns(expressions));
+            MergedColumns.AddRange(GetColumns(expression));
             return this;
         }
 
-        public MergeBuilder<TEntity> SetConditions<TConditionType, TConditionOperator>(TConditionType conditionType, TConditionOperator conditionOperator, params Expression<Func<TEntity, object>>[] expressions)
+        public MergeBuilder<TEntity> SetUpdatedColumns(Expression<Func<TEntity, object>> expression)
+        {
+            UpdatedColumns.AddRange(GetColumns(expression));
+            return this;
+        }
+
+        public MergeBuilder<TEntity> WithCondition<TConditionType, TConditionOperator>(TConditionType conditionType, TConditionOperator conditionOperator, Expression<Func<TEntity, object>> expression)
             where TConditionType : Enum
             where TConditionOperator : Enum
         {
             var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
             var cOperatorValue = (ConditionOperator)Enum.Parse(typeof(TConditionOperator), conditionOperator.ToString());
-            var columns = GetColumns(expressions);
+            var columns = GetColumns(expression);
 
             var condition = new ConditionBuilder(columns ?? new List<string>(), cTypeValue, cOperatorValue);
             Conditions.Add(condition);
@@ -68,9 +75,34 @@ namespace Bulk
             return this;
         }
 
-        public MergeBuilder<TEntity> SetIgnoreOnIsertOperation(params Expression<Func<TEntity, object>>[] expressions)
+        public MergeBuilder<TEntity> WithCondition<TConditionType, TFieldType>(TConditionType conditionType, Expression<Func<TEntity, TFieldType>> expression)
+            where TConditionType : Enum
+            where TFieldType : struct
         {
-            IgnoredOnInsertOperation.AddRange(GetColumns(expressions));
+            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var column = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+
+            var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
+            Conditions.Add(condition);
+
+            return this;
+        }
+
+        public MergeBuilder<TEntity> WithCondition<TConditionType>(TConditionType conditionType, Expression<Func<TEntity, string>> expression)
+            where TConditionType : Enum
+        {
+            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var column = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+
+            var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
+            Conditions.Add(condition);
+
+            return this;
+        }
+
+        public MergeBuilder<TEntity> SetIgnoreOnIsertOperation(Expression<Func<TEntity, object>> expression)
+        {
+            IgnoredOnInsertOperation.AddRange(GetColumns(expression));
             return this;
         }
 
@@ -204,7 +236,7 @@ namespace Bulk
             sqlCommand.ExecuteNonQuery();
         }
 
-        private static List<string> GetColumns(params Expression<Func<TEntity, object>>[] expressions)
+        private static List<string> GetColumns(Expression<Func<TEntity, object>> expressions)
         {
             var names = ExpressionExtension.GetMemberNames(expressions);
             if (names != null && names.Any())

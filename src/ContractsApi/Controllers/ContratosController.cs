@@ -60,7 +60,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Nome)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Abreviacao, x.Apelido })
+                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Abreviacao, x.Apelido })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -82,7 +82,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Numero)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => x.Nome)
+                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => x.Nome)
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -104,7 +104,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
+                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -126,7 +126,7 @@ namespace ContractsApi.Controllers
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
                 .SetUpdatedColumns(x => x)
-                .SetConditions(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Fim, x.Inicio, x.Preco })
+                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Fim, x.Inicio, x.Preco })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 

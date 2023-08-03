@@ -8,6 +8,8 @@ namespace Bulk.Models.Enumerators
         AND,
 
         [Description("or")]
-        OR
+        OR,
+
+        NONE
     }
 }
