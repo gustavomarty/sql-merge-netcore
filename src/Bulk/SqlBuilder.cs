@@ -1,6 +1,6 @@
-﻿using System.Text;
-using Bulk.Extensions;
+﻿using Bulk.Extensions;
 using Bulk.Models.Enumerators;
+using System.Text;
 
 namespace Bulk
 {
@@ -11,12 +11,21 @@ namespace Bulk
             return $@"Select Top 0 * into #{tableName} from {tableName}";
         }
 
+        public static string BuildPrimaryKeyQuery(string tableName)
+        {
+            return @$"
+                select column_name from information_schema.key_column_usage
+                where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1
+                and table_name = '{tableName}'
+            ";
+        }
+
         public static StringBuilder BuildMerge(
             string tableName, 
             List<string> MergedColumns, 
             List<string> UpdatedColumns, 
             List<string> InsertedColumns,
-            List<(string field, ConditionTypes op)> Conditions,
+            List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> Conditions,
             string StatusColumn)
         {
             var stringBuilderQuery = new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ");
@@ -35,6 +44,12 @@ namespace Bulk
 
             return stringBuilderQuery;
         }
+
+        public static string BuildDropTempTable(string tableName)
+        {
+            return $@"drop table #{tableName}";
+        }
+
         private static void BuildMergedColumns(StringBuilder stringBuilderQuery, List<string> MergedColumns)
         {
             for (int i = 0; i < MergedColumns.Count; i++)
@@ -45,17 +60,27 @@ namespace Bulk
                     stringBuilderQuery.Append(" AND ");
             }
         }
-        private static void BuildConditions(StringBuilder stringBuilderQuery, List<(string field, ConditionTypes op)> Conditions)
+        private static void BuildConditions(StringBuilder stringBuilderQuery, List<(List<string> fields, ConditionTypes cType, ConditionOperator cOperator)> conditions)
         {
-            for (int i = 0; i < Conditions.Count; i++)
+            for (int i = 0; i < conditions.Count; i++)
             {
-                var operation = Conditions[i].op.DisplayName();
-                var field = Conditions[i].field;
+                stringBuilderQuery.Append(" AND (");
 
-                stringBuilderQuery.Append($" AND tgt.{field} {operation} src.{field}");
+                for(int j = 0; j < conditions[i].fields.Count; j++)
+                {
+                    var cType = conditions[i].cType.DisplayName();
+                    var cOperator = conditions[i].cOperator.DisplayName();
+                    var field = conditions[i].fields[j];
 
-                if (i != (Conditions.Count - 1))
-                    stringBuilderQuery.Append(" AND ");
+                    if(j != 0)
+                    {
+                        stringBuilderQuery.Append($" {cOperator} ");
+                    }
+                    
+                    stringBuilderQuery.Append($"tgt.{field} {cType} src.{field}");
+                }
+
+                stringBuilderQuery.Append(')');
             }
         }
         private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn)

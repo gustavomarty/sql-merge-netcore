@@ -20,6 +20,8 @@ namespace Bulk.Extensions
         private void Initialize()
         {
             var properties = typeof(T).GetProperties();
+            properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
+
             _getPropValueFunc = new Func<T, object>[properties.Length];
 
             var ordinal = 0;

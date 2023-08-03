@@ -55,7 +55,7 @@ namespace Bulk
             var builder = new MergeBuilder<Time>()
                 .SetDataSource(_listaPayload)
                 .SetMergeColumns(x => new { x.Campeonato, x.Nome })
-                .SetUpdatedColumns(x => new { x.DataAtualizacao, x.Campeonato, x.Nome, x.Titulos, x.Participacoes, x.Jogos, x.Vitorias, x.Derrotas, x.Empates })
+                .SetUpdatedColumns(x => x)
                 .SetIgnoreOnIsertOperation(x => new { x.Id })
                 .SetTransaction(transaction)
                 .Execute();
