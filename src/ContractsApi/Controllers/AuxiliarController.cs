@@ -1,16 +1,16 @@
 using Bogus;
 using Bogus.Extensions.Brazil;
-using ContractsApi.Data;
-using ContractsApi.Data.Entities;
-using ContractsApi.Extensions;
-using ContractsApi.Models.Dtos;
+using Contracts.Data.Data;
+using Contracts.Data.Data.Entities;
+using Contracts.Api.Extensions;
+using Contracts.Data.Models.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics.Contracts;
 
-namespace ContractsApi.Controllers
+namespace Contracts.Api.Controllers
 {
     [ApiController]
     public class AuxiliarController : ControllerBase
