@@ -26,10 +26,17 @@ namespace Contracts.Service
             _context = context;
         }
 
+        public async Task CleanTable()
+        {
+            await _context.Database.ExecuteSqlRawAsync("delete from Clube");
+        }
         public async Task Create(List<TeamDto> teamsDto)
         {
-        }
+            var teams = GenerateClubeListFromTeamDtoList(teamsDto);
 
+            await _context.AddRangeAsync(teams);
+            await _context.SaveChangesAsync();
+        }
         public async Task CreateBulk(List<TeamDto> teamsDto) 
         {
             var dataSource = GenerateClubeListFromTeamDtoList(teamsDto);
@@ -48,7 +55,6 @@ namespace Contracts.Service
 
             transaction.Commit();
         }
-
         public async Task<List<Clube>> GetAll()
         {
             return await _context.Set<Clube>().ToListAsync();
@@ -93,7 +99,6 @@ namespace Contracts.Service
 
             return result;
         }
-
         private static List<Clube> GenerateClubeListFromTeamDtoList(List<TeamDto> teamsDto)
         {
             return teamsDto.Select(x => new Clube
@@ -104,7 +109,6 @@ namespace Contracts.Service
                 DataAlteracao = DateTime.Now
             }).ToList();
         }
-
         private List<TeamDto> GetNewFakeTeams(int quantity)
         {
             var faker = new Faker<TeamDto>("pt_BR")
@@ -119,5 +123,7 @@ namespace Contracts.Service
 
             return responseGroup.ToList();
         }
+
+
     }
 }

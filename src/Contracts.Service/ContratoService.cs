@@ -21,9 +21,16 @@ namespace Contracts.Service
             _context = context;
         }
 
-        public Task Create(List<ContratoDto> contratoDto)
+        public async Task CleanTable()
         {
-            throw new NotImplementedException();
+            await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE Contrato");
+        }
+        public async Task Create(List<ContratoDto> contratoDto)
+        {
+            var contratos = await GenerateContratoListFromContratoDtoList(contratoDto);
+
+            await _context.AddRangeAsync(contratos);
+            await _context.SaveChangesAsync();
         }
 
         public async Task CreateBulk(List<ContratoDto> contratoDto)
@@ -122,9 +129,9 @@ namespace Contracts.Service
 
         private async Task<List<ContratoDto>> GetNewFakeContracts(int quantity)
         {
-            var teamNames = await _context.Set<Clube>().Select(x => x.Nome).ToListAsync();
-            var materialNumbers = await _context.Set<Material>().Select(x => x.Numero).ToListAsync();
-            var supplierDocuments = await _context.Set<Fornecedor>().Select(x => x.Documento).ToListAsync();
+            var teamNames = await _context.Set<Clube>().AsNoTracking().Select(x => x.Nome).ToListAsync();
+            var materialNumbers = await _context.Set<Material>().AsNoTracking().Select(x => x.Numero).ToListAsync();
+            var supplierDocuments = await _context.Set<Fornecedor>().AsNoTracking().Select(x => x.Documento).ToListAsync();
 
             if (!teamNames.Any() || !materialNumbers.Any() || !supplierDocuments.Any())
             {

@@ -26,9 +26,16 @@ namespace Contracts.Service
             _context = context;
         }
 
-        public Task Create(List<MaterialDto> materialDto)
+        public async Task CleanTable()
         {
-            throw new NotImplementedException();
+            await _context.Database.ExecuteSqlRawAsync("delete from Material");
+        }
+        public async Task Create(List<MaterialDto> materialDto)
+        {
+            var materiais = GenerateMaterialListFromMaterialDtoList(materialDto);
+
+            await _context.AddRangeAsync(materiais);
+            await _context.SaveChangesAsync();
         }
 
         public async Task CreateBulk(List<MaterialDto> materialDto)

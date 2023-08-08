@@ -5,6 +5,7 @@ namespace Contracts.Service.Interfaces
 {
     public interface IMaterialService
     {
+        Task CleanTable();
         Task Create(List<MaterialDto> materialDto);
         Task CreateBulk(List<MaterialDto> materialDto);
         Task<List<Material>> GetAll();

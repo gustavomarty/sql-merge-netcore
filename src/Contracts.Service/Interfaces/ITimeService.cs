@@ -5,6 +5,7 @@ namespace Contracts.Service.Interfaces
 {
     public interface ITimeService
     {
+        Task CleanTable();
         Task Create(List<TeamDto> teamsDto);
         Task CreateBulk(List<TeamDto> teamsDto);
         Task<List<Clube>> GetAll();
