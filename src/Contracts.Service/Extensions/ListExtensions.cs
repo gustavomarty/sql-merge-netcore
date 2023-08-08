@@ -1,4 +1,4 @@
-﻿namespace Contracts.Api.Extensions
+﻿namespace Contracts.Service.Extensions
 {
     public static class ListExtensions
     {

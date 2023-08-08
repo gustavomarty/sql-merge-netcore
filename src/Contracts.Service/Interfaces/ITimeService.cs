@@ -8,5 +8,7 @@ namespace Contracts.Service.Interfaces
         Task Create(List<TeamDto> teamsDto);
         Task CreateBulk(List<TeamDto> teamsDto);
         Task<List<Clube>> GetAll();
+        Task<List<TeamDto>> GetNewFakes(int qtd);
+        Task<List<TeamDto>> GetMix(int qtd, bool withChanges);
     }
 }

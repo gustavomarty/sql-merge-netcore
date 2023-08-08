@@ -1,7 +1,10 @@
-﻿using Bulk;
+﻿using Bogus;
+using Bulk;
 using Bulk.Models.Enumerators;
+using Contracts.Data.Data;
 using Contracts.Data.Data.Entities;
 using Contracts.Data.Models.Dtos;
+using Contracts.Service.Extensions;
 using Contracts.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -50,6 +53,46 @@ namespace Contracts.Service
         {
             return await _context.Set<Clube>().ToListAsync();
         }
+        public async Task<List<TeamDto>> GetNewFakes(int qtd)
+        {
+            return GetNewFakeTeams(qtd);
+        }
+        public async Task<List<TeamDto>> GetMix(int qtd, bool withChanges)
+        {
+            var existingTeams = await _context.Set<Clube>().ToListAsync();
+
+            var quantityForGenerateTeams = qtd / 2;
+            var quantityForExistingTeams = qtd / 2;
+
+            if (existingTeams.Count < quantityForGenerateTeams)
+            {
+                quantityForExistingTeams = existingTeams.Count;
+                quantityForGenerateTeams += (quantityForGenerateTeams - existingTeams.Count);
+            }
+
+            var newTeams = GetNewFakeTeams(quantityForGenerateTeams);
+            existingTeams.Shuffle();
+
+            existingTeams = existingTeams.Take(quantityForExistingTeams).ToList();
+
+
+            List<TeamDto> result = new();
+            result.AddRange(newTeams);
+            result.AddRange(existingTeams.Select(x => {
+
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new TeamDto
+                {
+                    Nome = x.Nome,
+                    Abreviacao = x.Abreviacao,
+                    Apelido = changeItems ? $"ALTERADO: {x.Apelido}" : x.Apelido ?? string.Empty
+                };
+            }));
+
+            return result;
+        }
 
         private static List<Clube> GenerateClubeListFromTeamDtoList(List<TeamDto> teamsDto)
         {
@@ -60,6 +103,21 @@ namespace Contracts.Service
                 Apelido = x.Apelido,
                 DataAlteracao = DateTime.Now
             }).ToList();
+        }
+
+        private List<TeamDto> GetNewFakeTeams(int quantity)
+        {
+            var faker = new Faker<TeamDto>("pt_BR")
+                .RuleFor(x => x.Nome, f => f.Company.CompanyName())
+                .RuleFor(x => x.Abreviacao, f => f.Company.CompanyName()[..3].ToUpper())
+                .RuleFor(x => x.Apelido, string.Empty);
+
+            var response = faker.Generate(quantity);
+
+            var responseGroup = response.GroupBy(x => x.Nome)
+                .Select(g => g.First());
+
+            return responseGroup.ToList();
         }
     }
 }

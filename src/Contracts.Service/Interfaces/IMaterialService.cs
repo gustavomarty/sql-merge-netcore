@@ -8,5 +8,7 @@ namespace Contracts.Service.Interfaces
         Task Create(List<MaterialDto> materialDto);
         Task CreateBulk(List<MaterialDto> materialDto);
         Task<List<Material>> GetAll();
+        Task<List<MaterialDto>> GetNewFakes(int qtd);
+        Task<List<MaterialDto>> GetMix(int qtd, bool withChanges);
     }
 }

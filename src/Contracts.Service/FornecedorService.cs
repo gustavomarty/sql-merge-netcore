@@ -1,16 +1,14 @@
-﻿using Bulk.Models.Enumerators;
-using Bulk;
-using Contracts.Data.Data.Entities;
+﻿using Bulk;
+using Bogus;
+using Bogus.Extensions.Brazil;
+using Bulk.Models.Enumerators;
+using Contracts.Service.Extensions;
 using Contracts.Data.Models.Dtos;
+using Contracts.Data.Data.Entities;
 using Contracts.Service.Interfaces;
-using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Context = Contracts.Data.Data.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Context = Contracts.Data.Data.ApplicationContext;
 
 namespace Contracts.Service
 {
@@ -50,6 +48,44 @@ namespace Contracts.Service
         {
             return await _context.Set<Fornecedor>().ToListAsync();
         }
+        public async Task<List<FornecedorDto>> GetNewFakes(int qtd)
+        {
+            return GetNewFakeSuppliers(qtd);
+        }
+        public async Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges)
+        {
+            var existingData = await _context.Set<Fornecedor>().ToListAsync();
+
+            var quantityForGenerateData = qtd / 2;
+            var quantityForExistingData = qtd / 2;
+
+            if (existingData.Count < quantityForGenerateData)
+            {
+                quantityForExistingData = existingData.Count;
+                quantityForGenerateData += (quantityForGenerateData - existingData.Count);
+            }
+
+            var newData = GetNewFakeSuppliers(quantityForGenerateData);
+            existingData.Shuffle();
+            existingData = existingData.Take(quantityForExistingData).ToList();
+
+            List<FornecedorDto> result = new();
+            result.AddRange(newData);
+            result.AddRange(existingData.Select(x => {
+
+                Random random = new();
+                bool changeItems = withChanges && random.Next(100) < 40;
+
+                return new FornecedorDto
+                {
+                    Nome = changeItems ? $"ALTERADO: {x.Nome}" : x.Nome,
+                    Documento = x.Documento,
+                    Cep = x.Cep
+                };
+            }));
+
+            return result;
+        }
 
         private static List<Fornecedor> GenerateFornecedorListFromFornecedorDtoList(List<FornecedorDto> fornecedorsDto)
         {
@@ -60,6 +96,21 @@ namespace Contracts.Service
                 Cep = x.Cep,
                 DataAlteracao = DateTime.Now
             }).ToList();
+        }
+
+        private List<FornecedorDto> GetNewFakeSuppliers(int quantity)
+        {
+            var faker = new Faker<FornecedorDto>("pt_BR")
+                .RuleFor(x => x.Nome, f => f.Company.CompanyName())
+                .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
+                .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
+
+            var response = faker.Generate(quantity);
+
+            var responseGroup = response.GroupBy(x => x.Documento)
+                .Select(g => g.First());
+
+            return responseGroup.ToList();
         }
     }
 }

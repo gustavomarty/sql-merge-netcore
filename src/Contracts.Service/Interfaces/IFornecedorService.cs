@@ -8,5 +8,7 @@ namespace Contracts.Service.Interfaces
         Task Create(List<FornecedorDto> fornecedorDto);
         Task CreateBulk(List<FornecedorDto> fornecedorDto);
         Task<List<Fornecedor>> GetAll();
+        Task<List<FornecedorDto>> GetNewFakes(int qtd);
+        Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges);
     }
 }
