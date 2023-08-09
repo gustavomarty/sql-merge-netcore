@@ -12,5 +12,6 @@ namespace Contracts.Service.Interfaces
         Task<List<Contrato>> GetAll();
         Task<List<ContratoDto>> GetNewFakes(int qtd);
         Task<List<ContratoDto>> GetMix(int qtd, bool withChanges);
+        Task<List<ContratoDto>> GetMixAll();
     }
 }

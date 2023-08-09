@@ -37,6 +37,7 @@ namespace Contracts.Service
             if (contract != null) 
             {
                 contract.Preco = contratoDto.Preco;
+                contract.Descricao = contratoDto.Descricao;
                 contract.DataAlteracao = DateTime.Now;
 
                 await _context.SaveChangesAsync();
@@ -53,9 +54,9 @@ namespace Contracts.Service
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()
-                .SetMergeColumns(x => new { x.IdClube, x.IdFornecedor, x.IdMaterial, x.Numero })
+                .SetMergeColumns(x => new { x.Numero })
                 .SetUpdatedColumns(x => x)
-                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Fim, x.Inicio, x.Preco })
+                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Preco }) //Todos menos numero
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 
@@ -110,6 +111,30 @@ namespace Contracts.Service
             return result;
         }
 
+        public async Task<List<ContratoDto>> GetMixAll()
+        {
+            var existingData = await _context.Set<Contrato>().Include(c => c.Clube).Include(f => f.Fornecedor).Include(m => m.Material).ToListAsync();
+
+            existingData.Shuffle();
+
+            List<ContratoDto> result = new();
+            result.AddRange(existingData.Select(x => {
+                return new ContratoDto
+                {
+                    Descricao = $"ALTERADO {DateTime.Now}: {x.Descricao}",
+                    DocumentoFornecedor = x.Fornecedor.Documento,
+                    NomeClube = x.Clube.Nome,
+                    NumeroMaterial = x.Material.Numero,
+                    Numero = x.Numero,
+                    Inicio = x.Inicio,
+                    Fim = x.Fim,
+                    Preco = x.Preco + 1
+                };
+            }));
+
+            return result;
+        }
+
         public async Task<List<ContratoDto>> GetNewFakes(int qtd)
         {
             return await GetNewFakeContracts(qtd);
@@ -150,6 +175,7 @@ namespace Contracts.Service
 
             var faker = new Faker<ContratoDto>("pt_BR")
                 .RuleFor(x => x.NomeClube, f => f.PickRandom(teamNames))
+                .RuleFor(x => x.Descricao, f => $"Descrição do contrato data - {DateTime.Now}")
                 .RuleFor(x => x.NumeroMaterial, f => f.PickRandom(materialNumbers))
                 .RuleFor(x => x.DocumentoFornecedor, f => f.PickRandom(supplierDocuments))
                 .RuleFor(x => x.Numero, f => f.Random.Number(10000, 99999).ToString())
@@ -159,7 +185,7 @@ namespace Contracts.Service
 
             var response = faker.Generate(quantity);
 
-            var responseGroup = response.GroupBy(x => new { x.NomeClube, x.NumeroMaterial, x.DocumentoFornecedor, x.Numero })
+            var responseGroup = response.GroupBy(x => new { x.Numero })
                 .Select(g => g.First());
 
             return responseGroup.ToList();

@@ -44,7 +44,7 @@ public class UpdateDataTestes
     {
         Console.WriteLine($"Inicio Unitario -> {DateTime.Now}");
 
-        var contratosMix = await _contratoService!.GetMix(200, true);
+        var contratosMix = await _contratoService!.GetMixAll();
 
         foreach (var contrato in contratosMix)
         {
@@ -60,7 +60,7 @@ public class UpdateDataTestes
     {
         Console.WriteLine($"Inicio Bulk -> {DateTime.Now}");
 
-        var contratosMix = await _contratoService!.GetMix(200, true);
+        var contratosMix = await _contratoService!.GetMixAll();
         await _contratoService.Upsert(contratosMix);
 
         Console.WriteLine($"Fim Bulk -> {DateTime.Now}");

@@ -34,9 +34,9 @@ public class ConfigureTestes
 
     public async Task BuildPayloads(int qtd)
     {
-        _materials = await _materialService.GetNewFakes(200);
-        _times = await _timeService.GetNewFakes(200);
-        _fornecedores = await _fornecedorService.GetNewFakes(200);
+        _materials = await _materialService.GetNewFakes(qtd);
+        _times = await _timeService.GetNewFakes(qtd);
+        _fornecedores = await _fornecedorService.GetNewFakes(qtd);
     }
 
     public async Task RunInsertOneByOne()

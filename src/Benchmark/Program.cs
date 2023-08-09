@@ -25,7 +25,6 @@ internal class Program
             })
             .Build();
 
-
         //Configure Data
         var insertTestsDebug = host.Services.GetService<ConfigureTestes>();
         var contratoService = host.Services.GetService<IContratoService>();
@@ -33,8 +32,12 @@ internal class Program
         await insertTestsDebug!.BuildPayloads(400);
         await insertTestsDebug!.RunInsertBulk(400);
 
+        //var teste = await contratoService.GetMixAll();
+        //await contratoService.Upsert(teste);
+
         //Run Benchmark
         BenchmarkRunner.Run<UpdateDataTestes>();
+
 
         await host.RunAsync();
     }
