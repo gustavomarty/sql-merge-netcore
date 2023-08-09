@@ -30,14 +30,18 @@ namespace Contracts.Service
         {
             await _context.Database.ExecuteSqlRawAsync("delete from Clube");
         }
-        public async Task Create(List<TeamDto> teamsDto)
+        public async Task InsertRange(List<TeamDto> teamsDto)
         {
             var teams = GenerateClubeListFromTeamDtoList(teamsDto);
 
             await _context.AddRangeAsync(teams);
             await _context.SaveChangesAsync();
         }
-        public async Task CreateBulk(List<TeamDto> teamsDto) 
+        public Task Update(TeamDto team)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task Upsert(List<TeamDto> teamsDto) 
         {
             var dataSource = GenerateClubeListFromTeamDtoList(teamsDto);
 
@@ -123,7 +127,5 @@ namespace Contracts.Service
 
             return responseGroup.ToList();
         }
-
-
     }
 }

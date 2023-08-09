@@ -55,28 +55,28 @@ namespace Contracts.Api.Controllers
         [HttpPost("contracts/teams")]
         public async Task<IActionResult> PostTeams([FromBody] List<TeamDto> teamsDto)
         {
-            await _timeService.CreateBulk(teamsDto);
+            await _timeService.Upsert(teamsDto);
             return NoContent();
         }
 
         [HttpPost("contracts/materials")]
         public async Task<IActionResult> PostMaterials([FromBody] List<MaterialDto> materialsDto)
         {
-            await _materialService.CreateBulk(materialsDto);
+            await _materialService.Upsert(materialsDto);
             return NoContent();
         }
 
         [HttpPost("contracts/suppliers")]
         public async Task<IActionResult> PostSuppliers([FromBody] List<FornecedorDto> fornecedoresDto)
         {
-            await _fornecedorService.CreateBulk(fornecedoresDto);
+            await _fornecedorService.Upsert(fornecedoresDto);
             return NoContent();
         }
 
         [HttpPost("contracts")]
         public async Task<IActionResult> Post([FromBody] List<ContratoDto> contratosDto)
         {
-            await _contratoService.CreateBulk(contratosDto);
+            await _contratoService.Upsert(contratosDto);
             return NoContent();
         }
     }

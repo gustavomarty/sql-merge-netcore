@@ -6,8 +6,9 @@ namespace Contracts.Service.Interfaces
     public interface IMaterialService
     {
         Task CleanTable();
-        Task Create(List<MaterialDto> materialDto);
-        Task CreateBulk(List<MaterialDto> materialDto);
+        Task InsertRange(List<MaterialDto> materialDto);
+        Task Update(MaterialDto material);
+        Task Upsert(List<MaterialDto> materialDto);
         Task<List<Material>> GetAll();
         Task<List<MaterialDto>> GetNewFakes(int qtd);
         Task<List<MaterialDto>> GetMix(int qtd, bool withChanges);

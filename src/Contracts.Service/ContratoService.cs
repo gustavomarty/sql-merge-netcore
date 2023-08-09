@@ -25,15 +25,19 @@ namespace Contracts.Service
         {
             await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE Contrato");
         }
-        public async Task Create(List<ContratoDto> contratoDto)
+        public async Task InsertRange(List<ContratoDto> contratoDto)
         {
             var contratos = await GenerateContratoListFromContratoDtoList(contratoDto);
 
             await _context.AddRangeAsync(contratos);
             await _context.SaveChangesAsync();
         }
+        public Task Update(ContratoDto contrato)
+        {
+            throw new NotImplementedException();
+        }
 
-        public async Task CreateBulk(List<ContratoDto> contratoDto)
+        public async Task Upsert(List<ContratoDto> contratoDto)
         {
             var dataSource = await GenerateContratoListFromContratoDtoList(contratoDto);
 

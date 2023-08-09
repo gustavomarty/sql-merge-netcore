@@ -25,15 +25,19 @@ namespace Contracts.Service
         {
             await _context.Database.ExecuteSqlRawAsync("delete from Fornecedor");
         }
-        public async Task Create(List<FornecedorDto> fornecedorDto)
+        public async Task InsertRange(List<FornecedorDto> fornecedorDto)
         {
             var fornecedores = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
 
             await _context.AddRangeAsync(fornecedores);
             await _context.SaveChangesAsync();
         }
+        public Task Update(FornecedorDto fornecedor)
+        {
+            throw new NotImplementedException();
+        }
 
-        public async Task CreateBulk(List<FornecedorDto> fornecedorDto)
+        public async Task Upsert(List<FornecedorDto> fornecedorDto)
         {
             var dataSource = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
 

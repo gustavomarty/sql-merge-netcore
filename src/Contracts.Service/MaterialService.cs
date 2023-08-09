@@ -30,15 +30,19 @@ namespace Contracts.Service
         {
             await _context.Database.ExecuteSqlRawAsync("delete from Material");
         }
-        public async Task Create(List<MaterialDto> materialDto)
+        public async Task InsertRange(List<MaterialDto> materialDto)
         {
             var materiais = GenerateMaterialListFromMaterialDtoList(materialDto);
 
             await _context.AddRangeAsync(materiais);
             await _context.SaveChangesAsync();
         }
+        public Task Update(MaterialDto material)
+        {
+            throw new NotImplementedException();
+        }
 
-        public async Task CreateBulk(List<MaterialDto> materialDto)
+        public async Task Upsert(List<MaterialDto> materialDto)
         {
             var dataSource = GenerateMaterialListFromMaterialDtoList(materialDto);
 

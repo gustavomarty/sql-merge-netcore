@@ -58,16 +58,16 @@ public class InsertTests
         Console.WriteLine($"Inicio Unitario -> {DateTime.Now}");
 
         //Insert Clube
-        await _timeService.Create(_times);
+        await _timeService.InsertRange(_times);
 
         //Insert Material
-        await _materialService.Create(_materials);
+        await _materialService.InsertRange(_materials);
 
         //Insert Fornecedor
-        await _fornecedorService.Create(_fornecedores);
+        await _fornecedorService.InsertRange(_fornecedores);
 
         //Insert Contrato
-        await _contratoService.Create(await _contratoService.GetNewFakes(10));
+        await _contratoService.InsertRange(await _contratoService.GetNewFakes(10));
 
         //Limpa tabelas
         await _contratoService.CleanTable();
@@ -85,16 +85,16 @@ public class InsertTests
         Console.WriteLine($"Inicio Bulk -> {DateTime.Now}");
 
         //Insert Clube
-        await _timeService.CreateBulk(_times);
+        await _timeService.Upsert(_times);
 
         //Insert Material
-        await _materialService.CreateBulk(_materials);
+        await _materialService.Upsert(_materials);
 
         //Insert Fornecedor
-        await _fornecedorService.CreateBulk(_fornecedores);
+        await _fornecedorService.Upsert(_fornecedores);
 
         //Insert Contrato
-        await _contratoService.CreateBulk(await _contratoService.GetNewFakes(100));
+        await _contratoService.Upsert(await _contratoService.GetNewFakes(100));
 
         //Limpa tabelas
         await _timeService.CleanTable();
