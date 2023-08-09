@@ -7,7 +7,7 @@ namespace Contracts.Service.Interfaces
     {
         Task CleanTable();
         Task InsertRange(List<MaterialDto> materialDto);
-        Task Update(MaterialDto material);
+        Task Update(MaterialDto materialDto);
         Task Upsert(List<MaterialDto> materialDto);
         Task<List<Material>> GetAll();
         Task<List<MaterialDto>> GetNewFakes(int qtd);

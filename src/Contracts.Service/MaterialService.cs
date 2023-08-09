@@ -37,9 +37,15 @@ namespace Contracts.Service
             await _context.AddRangeAsync(materiais);
             await _context.SaveChangesAsync();
         }
-        public Task Update(MaterialDto material)
+        public async Task Update(MaterialDto materialDto)
         {
-            throw new NotImplementedException();
+            var material = _context.Set<Material>().FirstOrDefault(m => m.Nome.Equals(materialDto.Nome));
+            if (material != null)
+            {
+                material.DataAlteracao = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task Upsert(List<MaterialDto> materialDto)

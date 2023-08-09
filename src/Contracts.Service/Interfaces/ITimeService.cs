@@ -7,7 +7,7 @@ namespace Contracts.Service.Interfaces
     {
         Task CleanTable();
         Task InsertRange(List<TeamDto> teamsDto);
-        Task Update(TeamDto team);
+        Task Update(TeamDto teamDto);
         Task Upsert(List<TeamDto> teamsDto);
         Task<List<Clube>> GetAll();
         Task<List<TeamDto>> GetNewFakes(int qtd);

@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,9 +38,15 @@ namespace Contracts.Service
             await _context.AddRangeAsync(teams);
             await _context.SaveChangesAsync();
         }
-        public Task Update(TeamDto team)
+        public async Task Update(TeamDto teamDto)
         {
-            throw new NotImplementedException();
+            var clube = _context.Set<Clube>().FirstOrDefault(c => c.Nome.Equals(teamDto.Nome));
+            if (clube != null)
+            {
+                clube.DataAlteracao = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+            }
         }
         public async Task Upsert(List<TeamDto> teamsDto) 
         {

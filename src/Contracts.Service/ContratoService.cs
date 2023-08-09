@@ -32,9 +32,16 @@ namespace Contracts.Service
             await _context.AddRangeAsync(contratos);
             await _context.SaveChangesAsync();
         }
-        public Task Update(ContratoDto contrato)
+        public async Task Update(ContratoDto contratoDto)
         {
-            throw new NotImplementedException();
+            var contract = _context.Set<Contrato>().FirstOrDefault(c => c.Numero.Equals(contratoDto.Numero));
+            if (contract != null) 
+            {
+                contract.Preco = contratoDto.Preco;
+                contract.DataAlteracao = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task Upsert(List<ContratoDto> contratoDto)
