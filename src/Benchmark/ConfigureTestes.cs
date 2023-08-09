@@ -1,7 +1,7 @@
 ﻿using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 
-public class InsertTestsDebug
+public class ConfigureTestes
 {
     private List<MaterialDto> _materials;
     private List<TeamDto> _times;
@@ -12,7 +12,7 @@ public class InsertTestsDebug
     private IFornecedorService _fornecedorService;
     private IContratoService _contratoService;
 
-    public InsertTestsDebug(
+    public ConfigureTestes(
         ITimeService timeService,
         IMaterialService materialService,
         IFornecedorService fornecedorService,
@@ -24,11 +24,19 @@ public class InsertTestsDebug
         _contratoService = contratoService;
     }
 
-    public async Task BuildPayloads()
+    public async Task CleanTables()
     {
-        _materials = await _materialService.GetNewFakes(100);
-        _times = await _timeService.GetNewFakes(100);
-        _fornecedores = await _fornecedorService.GetNewFakes(100);
+        await _contratoService.CleanTable();
+        await _materialService.CleanTable();
+        await _timeService.CleanTable();
+        await _fornecedorService.CleanTable();
+    }
+
+    public async Task BuildPayloads(int qtd)
+    {
+        _materials = await _materialService.GetNewFakes(200);
+        _times = await _timeService.GetNewFakes(200);
+        _fornecedores = await _fornecedorService.GetNewFakes(200);
     }
 
     public async Task RunInsertOneByOne()
@@ -44,15 +52,9 @@ public class InsertTestsDebug
 
         //Insert Contrato
         await _contratoService.InsertRange(await _contratoService.GetNewFakes(100));
-
-        //Limpa tabelas
-        await _timeService.CleanTable();
-        await _materialService.CleanTable();
-        await _fornecedorService.CleanTable();
-        await _contratoService.CleanTable();
     }
 
-    public async Task RunInsertBulk()
+    public async Task RunInsertBulk(int qtdContratos = 200)
     {
         //Insert Clube
         await _timeService.Upsert(_times);
@@ -64,12 +66,6 @@ public class InsertTestsDebug
         await _fornecedorService.Upsert(_fornecedores);
 
         //Insert Contrato
-        await _contratoService.Upsert(await _contratoService.GetNewFakes(100));
-
-        //Limpa tabelas
-        await _timeService.CleanTable();
-        await _materialService.CleanTable();
-        await _fornecedorService.CleanTable();
-        await _contratoService.CleanTable();
+        await _contratoService.Upsert(await _contratoService.GetNewFakes(qtdContratos));
     }
 }

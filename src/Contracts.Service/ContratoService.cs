@@ -1,14 +1,13 @@
-﻿using Bulk.Models.Enumerators;
-using Bulk;
-using Contracts.Data.Data.Entities;
+﻿using Bulk;
+using Bogus;
+using Bulk.Models.Enumerators;
 using Contracts.Data.Models.Dtos;
+using Contracts.Service.Extensions;
 using Contracts.Service.Interfaces;
+using Contracts.Data.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Context = Contracts.Data.Data.ApplicationContext;
-using Bogus;
-using Contracts.Data.Data;
-using Contracts.Service.Extensions;
 
 namespace Contracts.Service
 {
@@ -70,7 +69,7 @@ namespace Contracts.Service
 
         public async Task<List<ContratoDto>> GetMix(int qtd, bool withChanges)
         {
-            var existingData = await _context.Set<Contrato>().ToListAsync();
+            var existingData = await _context.Set<Contrato>().Include(c => c.Clube).Include(f => f.Fornecedor).Include(m => m.Material).ToListAsync();
 
             var quantityForGenerateData = qtd / 2;
             var quantityForExistingData = qtd / 2;

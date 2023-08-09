@@ -1,15 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Contracts.Data.Data;
 using Contracts.Data.Models.Dtos;
-using Contracts.Service;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Z.EntityFramework.Extensions;
 
 [RPlotExporter]
-public class InsertTests
+public class UpdateDataTestes
 {
     //[Params(100, 1000)]
     //public int N;
@@ -41,68 +37,32 @@ public class InsertTests
         _fornecedorService = _serviceProvider.GetRequiredService<IFornecedorService>();
         _timeService = _serviceProvider.GetRequiredService<ITimeService>();
         _contratoService = _serviceProvider.GetRequiredService<IContratoService>();
-
-        await BuildPayloads();
-    }
-
-    public async Task BuildPayloads()
-    {
-        _materials = await _materialService.GetNewFakes(10);
-        _times = await _timeService.GetNewFakes(10);
-        _fornecedores = await _fornecedorService.GetNewFakes(10);
     }
 
     [Benchmark]
-    public async Task RunInsertOneByOne()
+    public async Task UpdateOneByOne()
     {
         Console.WriteLine($"Inicio Unitario -> {DateTime.Now}");
 
-        //Insert Clube
-        await _timeService.InsertRange(_times);
+        var contratosMix = await _contratoService!.GetMix(200, true);
 
-        //Insert Material
-        await _materialService.InsertRange(_materials);
-
-        //Insert Fornecedor
-        await _fornecedorService.InsertRange(_fornecedores);
-
-        //Insert Contrato
-        await _contratoService.InsertRange(await _contratoService.GetNewFakes(10));
-
-        //Limpa tabelas
-        await _contratoService.CleanTable();
-        await _timeService.CleanTable();
-        await _materialService.CleanTable();
-        await _fornecedorService.CleanTable();
+        foreach (var contrato in contratosMix)
+        {
+            await _contratoService.Update(contrato);
+        }
 
         Console.WriteLine($"Fim Unitário -> {DateTime.Now}");
 
     }
 
-    //[Benchmark]
-    public async Task RunInsertBulk()
+    [Benchmark]
+    public async Task Upsert()
     {
         Console.WriteLine($"Inicio Bulk -> {DateTime.Now}");
 
-        //Insert Clube
-        await _timeService.Upsert(_times);
+        var contratosMix = await _contratoService!.GetMix(200, true);
+        await _contratoService.Upsert(contratosMix);
 
-        //Insert Material
-        await _materialService.Upsert(_materials);
-
-        //Insert Fornecedor
-        await _fornecedorService.Upsert(_fornecedores);
-
-        //Insert Contrato
-        await _contratoService.Upsert(await _contratoService.GetNewFakes(100));
-
-        //Limpa tabelas
-        await _timeService.CleanTable();
-        await _materialService.CleanTable();
-        await _fornecedorService.CleanTable();
-        await _contratoService.CleanTable();
-
-        await Task.Delay(3000);
         Console.WriteLine($"Fim Bulk -> {DateTime.Now}");
 
     }

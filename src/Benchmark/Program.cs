@@ -21,22 +21,22 @@ internal class Program
                 services.AddScoped<IFornecedorService, FornecedorService>();
                 services.AddScoped<IMaterialService, MaterialService>();
                 services.AddScoped<IContratoService, ContratoService>();
-                services.AddScoped<InsertTestsDebug>();
+                services.AddScoped<ConfigureTestes>();
             })
             .Build();
 
-        //Run Benchmark
-        BenchmarkRunner.Run<InsertTests>();
 
-        //Run Debug
-        //var myTest = host.Services.GetService<InsertTestsDebug>();
-        //await myTest!.BuildPayloads();
-        //await myTest!.RunInsertOneByOne();
+        //Configure Data
+        var insertTestsDebug = host.Services.GetService<ConfigureTestes>();
+        var contratoService = host.Services.GetService<IContratoService>();
+        await insertTestsDebug!.CleanTables();
+        await insertTestsDebug!.BuildPayloads(400);
+        await insertTestsDebug!.RunInsertBulk(400);
+
+        //Run Benchmark
+        BenchmarkRunner.Run<UpdateDataTestes>();
 
         await host.RunAsync();
-
-
-
     }
 
     public static ServiceProvider GetServiceProvider(IConfiguration configuration)
