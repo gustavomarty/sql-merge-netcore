@@ -14,10 +14,12 @@ namespace Contracts.Service
     public class ContratoService : IContratoService
     {
         private readonly Context _context;
+        private readonly IMergeBuilder _mergeBuilder;
 
-        public ContratoService(Context context)
+        public ContratoService(Context context, IMergeBuilder mergeBuilder)
         {
             _context = context;
+            _mergeBuilder = mergeBuilder;
         }
 
         public async Task CleanTable()
@@ -50,7 +52,7 @@ namespace Contracts.Service
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var builder = new MergeBuilder<Contrato>()
+            var builder = await _mergeBuilder.Create<Contrato>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()

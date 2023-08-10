@@ -1,29 +1,25 @@
-﻿using Bulk.Models.Enumerators;
+﻿using Bogus;
 using Bulk;
+using Bulk.Models.Enumerators;
 using Contracts.Data.Data.Entities;
 using Contracts.Data.Models.Dtos;
+using Contracts.Service.Extensions;
 using Contracts.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Context = Contracts.Data.Data.ApplicationContext;
 using Microsoft.EntityFrameworkCore.Storage;
-using Bogus;
-using Contracts.Data.Data;
-using Contracts.Service.Extensions;
+using Context = Contracts.Data.Data.ApplicationContext;
 
 namespace Contracts.Service
 {
     public class MaterialService : IMaterialService
     {
         private readonly Context _context;
+        private readonly IMergeBuilder _mergeBuilder;
 
-        public MaterialService(Context context)
+        public MaterialService(Context context, IMergeBuilder mergeBuilder)
         {
             _context = context;
+            _mergeBuilder = mergeBuilder;
         }
 
         public async Task CleanTable()
@@ -54,7 +50,7 @@ namespace Contracts.Service
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var builder = new MergeBuilder<Material>()
+            var builder = await _mergeBuilder.Create<Material>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()

@@ -1,12 +1,48 @@
 ﻿using Bulk.Extensions;
 using Bulk.Models;
 using Bulk.Models.Enumerators;
-using Microsoft.Data.SqlClient;
+using Bulk.Services;
 using System.Data;
 using System.Linq.Expressions;
 
 namespace Bulk
 {
+    /// <summary>
+    /// Classe para construir o comando SQL Merge.
+    /// </summary>
+    public class MergeBuilder : IMergeBuilder
+    {
+        private readonly IDatabaseService _databaseService;
+
+        public MergeBuilder(IDatabaseService databaseService)
+        {
+            _databaseService = databaseService;
+        }
+
+        /// <summary>
+        /// Cria uma nova instancia do MergeBuilder.
+        /// </summary>
+        /// <remarks>
+        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// </remarks>
+        public MergeBuilder<TEntity> Create<TEntity>() where TEntity : class
+        {
+            return new MergeBuilder<TEntity>(_databaseService);
+        }
+
+        /// <summary>
+        /// Cria uma nova instancia do MergeBuilder.
+        /// </summary>
+        /// <param name="tableName">Caso necessario voce pode passar o tableName</param>
+        /// <remarks>
+        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// </remarks>
+        public MergeBuilder<TEntity> Create<TEntity>(string tableName) where TEntity : class
+        {
+            return new MergeBuilder<TEntity>(_databaseService, tableName);
+        }
+    }
+
     /// <summary>
     /// Classe para construir o comando SQL Merge.
     /// </summary>
@@ -16,6 +52,7 @@ namespace Bulk
     public class MergeBuilder<TEntity> where TEntity : class
     {
         private string _tableName;
+        private readonly IDatabaseService _databaseService;
 
         private string StatusColumn { get; set; } = string.Empty;
         private string PrimaryKey { get; set; } = string.Empty;
@@ -37,9 +74,25 @@ namespace Bulk
         /// <remarks>
         /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
-        public MergeBuilder()
+        public MergeBuilder(IDatabaseService databaseService)
         {
+            _databaseService = databaseService;
+
             _tableName = typeof(TEntity).Name;
+        }
+
+        /// <summary>
+        /// Cria uma nova instancia do MergeBuilder.
+        /// </summary>
+        /// <param name="tableName">Caso necessario voce pode passar o tableName</param>
+        /// <remarks>
+        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// </remarks>
+        public MergeBuilder(IDatabaseService databaseService, string tableName)
+        {
+            _databaseService = databaseService;
+
+            _tableName = tableName;
         }
 
         /// <summary>
@@ -283,18 +336,18 @@ namespace Bulk
         /// <returns>
         /// Retorna o resultado do merge.
         /// </returns>
-        public string Execute()
+        public async Task<string> Execute()
         {
             if(DbTransaction == null || DbTransaction.Connection == null)
                 throw new Exception("");
 
             SetAllColumns();
-            SetPrimaryKeyColumn(DbTransaction.Connection);
+            SetPrimaryKeyColumn(DbTransaction);
 
             CheckSnakeCaseOnExecuteCommand();
 
             CreateTempTable(DbTransaction.Connection);
-            PopulateTempTable(DbTransaction.Connection);
+            await PopulateTempTable(DbTransaction);
             ExecuteMergeCommand(DbTransaction.Connection);
 
             DropTempTable(DbTransaction.Connection);
@@ -315,18 +368,9 @@ namespace Bulk
             AllColumns.AddRange(names);
         }
 
-        private void SetPrimaryKeyColumn(IDbConnection dbConnection)
+        private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
         {
-            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName);
-
-            var sqlCommand = dbConnection.CreateCommand();
-
-            sqlCommand.Transaction = DbTransaction;
-            sqlCommand.CommandText = query;
-
-            var pkField = sqlCommand.ExecuteScalar();
-
-            PrimaryKey = pkField?.ToString() ?? string.Empty;
+            PrimaryKey = _databaseService.GetPrimaryKeyByTableName(dbTransaction, _tableName);
 
             if(SnakeCaseNamingConvention)
                 PrimaryKey = PrimaryKey.ToSnakeCase();
@@ -374,18 +418,9 @@ namespace Bulk
             sqlCommand.ExecuteNonQuery();
         }
 
-        private void PopulateTempTable(IDbConnection dbConnection)
+        private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            DataTable table = new()
-            {
-                TableName = $"#{_tableName}"
-            };
-
-            using var bulkInsert = new SqlBulkCopy(dbConnection as SqlConnection, SqlBulkCopyOptions.Default, DbTransaction as SqlTransaction);
-            bulkInsert.DestinationTableName = table.TableName;
-
-            using var dataReader = new ObjectDataReader<TEntity>(DataSource.GetEnumerator());
-            bulkInsert.WriteToServer(dataReader);
+            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}");
         }
 
         private void DropTempTable(IDbConnection dbConnection)

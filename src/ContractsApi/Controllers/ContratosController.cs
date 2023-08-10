@@ -7,10 +7,10 @@ namespace Contracts.Api.Controllers
     [ApiController]
     public class ContratosController : ControllerBase
     {
-        private ITimeService _timeService;
-        private IMaterialService _materialService;
-        private IFornecedorService _fornecedorService;
-        private IContratoService _contratoService;
+        private readonly ITimeService _timeService;
+        private readonly IMaterialService _materialService;
+        private readonly IFornecedorService _fornecedorService;
+        private readonly IContratoService _contratoService;
 
         public ContratosController(
             ITimeService timeService,

@@ -3,6 +3,7 @@ using Contracts.Api.Configurations;
 using System.Text.Json.Serialization;
 using Contracts.Service.Interfaces;
 using Contracts.Service;
+using Bulk.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,7 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerConfiguration();
+builder.Services.ConfigureMergeBuilder();
 builder.Services.AddEntityFrameworkConfiguration(builder.Configuration);
 
 builder.Services.AddScoped<ITimeService, TimeService>();

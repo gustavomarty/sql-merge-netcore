@@ -1,19 +1,12 @@
 ﻿using Bogus;
 using Bulk;
 using Bulk.Models.Enumerators;
-using Contracts.Data.Data;
 using Contracts.Data.Data.Entities;
 using Contracts.Data.Models.Dtos;
 using Contracts.Service.Extensions;
 using Contracts.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Context = Contracts.Data.Data.ApplicationContext;
 
 namespace Contracts.Service
@@ -21,16 +14,19 @@ namespace Contracts.Service
     public class TimeService : ITimeService
     {
         private readonly Context _context;
+        private readonly IMergeBuilder _mergeBuilder;
 
-        public TimeService(Context context)
+        public TimeService(Context context, IMergeBuilder mergeBuilder)
         {
             _context = context;
+            _mergeBuilder = mergeBuilder;
         }
 
         public async Task CleanTable()
         {
             await _context.Database.ExecuteSqlRawAsync("delete from Clube");
         }
+
         public async Task InsertRange(List<TeamDto> teamsDto)
         {
             var teams = GenerateClubeListFromTeamDtoList(teamsDto);
@@ -38,6 +34,7 @@ namespace Contracts.Service
             await _context.AddRangeAsync(teams);
             await _context.SaveChangesAsync();
         }
+
         public async Task Update(TeamDto teamDto)
         {
             var clube = _context.Set<Clube>().FirstOrDefault(c => c.Nome.Equals(teamDto.Nome));
@@ -48,13 +45,14 @@ namespace Contracts.Service
                 await _context.SaveChangesAsync();
             }
         }
+
         public async Task Upsert(List<TeamDto> teamsDto) 
         {
             var dataSource = GenerateClubeListFromTeamDtoList(teamsDto);
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var builder = new MergeBuilder<Clube>()
+            var builder = await _mergeBuilder.Create<Clube>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()
@@ -66,6 +64,7 @@ namespace Contracts.Service
 
             transaction.Commit();
         }
+
         public async Task<List<Clube>> GetAll()
         {
             return await _context.Set<Clube>().ToListAsync();

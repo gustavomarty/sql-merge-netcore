@@ -15,10 +15,12 @@ namespace Contracts.Service
     public class FornecedorService : IFornecedorService
     {
         private readonly Context _context;
+        private readonly IMergeBuilder _mergeBuilder;
 
-        public FornecedorService(Context context)
+        public FornecedorService(Context context, IMergeBuilder mergeBuilder)
         {
             _context = context;
+            _mergeBuilder = mergeBuilder;
         }
 
         public async Task CleanTable()
@@ -49,7 +51,7 @@ namespace Contracts.Service
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var builder = new MergeBuilder<Fornecedor>()
+            var builder = await _mergeBuilder.Create<Fornecedor>()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()
@@ -61,14 +63,17 @@ namespace Contracts.Service
 
             transaction.Commit();
         }
+
         public async Task<List<Fornecedor>> GetAll()
         {
             return await _context.Set<Fornecedor>().ToListAsync();
         }
+
         public async Task<List<FornecedorDto>> GetNewFakes(int qtd)
         {
             return GetNewFakeSuppliers(qtd);
         }
+
         public async Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges)
         {
             var existingData = await _context.Set<Fornecedor>().ToListAsync();
