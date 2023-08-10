@@ -25,7 +25,9 @@ internal class Program
             .Build();
 
         //await TesteUpsert(host);
-        await TesteUpdateCompleto(host);
+        //await TesteUpdateCompleto(host);
+        await TesteUpdateDadosNovosEUpdate(host);
+
 
     }
 
@@ -49,6 +51,14 @@ internal class Program
     static async Task TesteUpsert(IHost host)
     {
         BenchmarkRunner.Run<TesteUpsertDadosNovosEUpdate>();
+    }
+
+    /// <summary>
+    /// Teste de um update 50% dos dados (unitário vs upsert), validando oq efetivamente tem alteração
+    /// </summary>
+    static async Task TesteUpdateDadosNovosEUpdate(IHost host)
+    {
+        BenchmarkRunner.Run<TesteUpdateMetadeDadosEditados>();
     }
 
     public static ServiceProvider GetServiceProvider(IConfiguration configuration)

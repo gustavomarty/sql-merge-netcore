@@ -89,7 +89,7 @@ namespace Contracts.Service
 
             return responseGroup.ToList();
         }
-        public async Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges)
+        public async Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges, bool getNewData = true)
         {
             var existingData = await _context.Set<Fornecedor>().ToListAsync();
 
@@ -102,12 +102,17 @@ namespace Contracts.Service
                 quantityForGenerateData += (quantityForGenerateData - existingData.Count);
             }
 
-            var newData = await GetNewFakes(quantityForGenerateData);
-            existingData.Shuffle();
-            existingData = existingData.Take(quantityForExistingData).ToList();
-
+            
             List<FornecedorDto> result = new();
-            result.AddRange(newData);
+            
+            if (getNewData)
+            {
+                var newData = await GetNewFakes(quantityForGenerateData);
+                existingData.Shuffle();
+                existingData = existingData.Take(quantityForExistingData).ToList();
+                result.AddRange(newData);
+            }
+
             result.AddRange(existingData.Select(x => {
 
                 Random random = new();

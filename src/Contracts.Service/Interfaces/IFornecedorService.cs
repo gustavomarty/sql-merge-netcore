@@ -13,6 +13,6 @@ namespace Contracts.Service.Interfaces
         Task<Fornecedor> Get(string documento);
         Task<List<Fornecedor>> GetAll();
         Task<List<FornecedorDto>> GetNewFakes(int qtd);
-        Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges);
+        Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges, bool getNewData = true);
     }
 }
