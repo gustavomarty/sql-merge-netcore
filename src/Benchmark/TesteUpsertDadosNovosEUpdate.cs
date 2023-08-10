@@ -4,17 +4,27 @@ using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// 1- Cria 1000 registros no banco
+/// 2- Cria 500 novos registros, modifica ~50% dos existentes (~250) e mantem ~50% (~250) inalterados
+/// 3- Valida se:
+///     - o dados é novo? Insere
+///     - o dado foi alterado? Atualiza
+///     - o dado não foi alterado? Descarta
+/// 
+/// -->> Executa o comparativo de forma unitária e com Upsert
+/// </summary>
 [RPlotExporter]
 [SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
 public class TesteUpsertDadosNovosEUpdate
 {
-    private ServiceProvider _serviceProvider;
-    private IFornecedorService _fornecedorService;
-
     //|          Method |        Mean |        Error |       StdDev |
     //|---------------- |------------:|-------------:|-------------:|
     //| ExecuteOneByOne | 90,678.0 ms | 12,179.04 ms | 35,910.18 ms |
     //|   ExecuteUpsert |    242.7 ms |      8.07 ms |     23.41 ms |
+
+    private ServiceProvider _serviceProvider;
+    private IFornecedorService _fornecedorService;
 
     [GlobalSetup]
     public async Task Setup()

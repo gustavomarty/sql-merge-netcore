@@ -4,6 +4,17 @@ using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+
+/// <summary>
+/// 1- Cria 1000 registros no banco
+/// 2- Modifica ~50% dos existentes (~500) e mantem ~50% (~500) inalterados
+/// 3- Valida se:
+///     - o dados é novo? Insere
+///     - o dado foi alterado? Atualiza
+///     - o dado não foi alterado? Descarta
+/// 
+/// -->> Executa o comparativo de forma unitária e com Upsert
+/// </summary>
 [RPlotExporter]
 [SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
 public class TesteUpdateMetadeDadosEditados
