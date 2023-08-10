@@ -41,10 +41,12 @@ namespace Contracts.Service
         }
         public async Task Update(FornecedorDto fornecedorDto)
         {
-            var fornecedor = _context.Set<Fornecedor>().FirstOrDefault(m => m.Nome.Equals(fornecedorDto.Nome));
+            var fornecedor = await Get(fornecedorDto.Documento);
             if (fornecedor != null)
             {
                 fornecedor.DataAlteracao = DateTime.Now;
+                fornecedor.Nome = fornecedorDto.Nome;
+                fornecedor.Cep = fornecedorDto.Cep;
 
                 await _context.SaveChangesAsync();
             }

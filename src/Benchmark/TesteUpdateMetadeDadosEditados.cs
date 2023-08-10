@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// 1- Cria 1000 registros no banco
-/// 2- Modifica ~50% dos existentes (~500) e mantem ~50% (~500) inalterados
+/// 2- Modifica ~40% dos existentes (~400) e mantem ~60% (~600) inalterados
 /// 3- Valida se:
 ///     - o dados é novo? Insere
 ///     - o dado foi alterado? Atualiza
@@ -22,10 +22,10 @@ public class TesteUpdateMetadeDadosEditados
     private ServiceProvider _serviceProvider;
     private IFornecedorService _fornecedorService;
 
-    //|          Method |       Mean |      Error |     StdDev |     Median |
-    //|---------------- |-----------:|-----------:|-----------:|-----------:|
-    //| ExecuteOneByOne | 1,848.6 ms | 3,895.8 ms | 1,011.7 ms | 1,399.9 ms |
-    //|   ExecuteUpsert |   519.3 ms | 2,638.1 ms |   685.1 ms |   219.3 ms |
+    //|          Method |       Mean |      Error |   StdDev |     Median |
+    //|---------------- |-----------:|-----------:|---------:|-----------:|
+    //| ExecuteOneByOne | 4,371.5 ms | 2,710.0 ms | 703.8 ms | 4,487.3 ms |
+    //|   ExecuteUpsert |   512.2 ms | 2,610.2 ms | 677.9 ms |   214.0 ms |
 
     [GlobalSetup]
     public async Task Setup()

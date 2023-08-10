@@ -24,10 +24,10 @@ internal class Program
             })
             .Build();
 
-        //await TesteUpsert(host);
-        //await TesteUpdateCompleto(host);
-        await TesteUpdateDadosNovosEUpdate(host);
 
+        await TesteUpsert(host);
+        //await TesteUpdateCompleto(host);
+        //await TesteUpdateMetadeDadosEditados(host);
 
     }
 
@@ -56,7 +56,7 @@ internal class Program
     /// <summary>
     /// Teste de um update 50% dos dados (unitário vs upsert), validando oq efetivamente tem alteração
     /// </summary>
-    static async Task TesteUpdateDadosNovosEUpdate(IHost host)
+    static async Task TesteUpdateMetadeDadosEditados(IHost host)
     {
         BenchmarkRunner.Run<TesteUpdateMetadeDadosEditados>();
     }
