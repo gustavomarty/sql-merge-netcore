@@ -17,7 +17,7 @@ internal class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddEntityFrameworkConfiguration(context.Configuration);
-                services.AddScoped<ITimeService, TimeService>();
+                services.AddScoped<IClubeService, ClubeService>();
                 services.AddScoped<IFornecedorService, FornecedorService>();
                 services.AddScoped<IMaterialService, MaterialService>();
                 services.AddScoped<IContratoService, ContratoService>();
@@ -54,7 +54,7 @@ internal class Program
     static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddEntityFrameworkConfiguration(configuration);
-        services.AddScoped<ITimeService, TimeService>();
+        services.AddScoped<IClubeService, ClubeService>();
         services.AddScoped<IFornecedorService, FornecedorService>();
         services.AddScoped<IMaterialService, MaterialService>();
         services.AddScoped<IContratoService, ContratoService>();

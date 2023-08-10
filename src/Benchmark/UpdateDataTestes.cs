@@ -11,11 +11,11 @@ public class UpdateDataTestes
     //public int N;
 
     private List<MaterialDto> _materials;
-    private List<TeamDto> _times;
+    private List<ClubeDto> _clubes;
     private List<FornecedorDto> _fornecedores;
 
     private ServiceProvider _serviceProvider;
-    private ITimeService _timeService;
+    private IClubeService _clubeService;
     private IMaterialService _materialService;
     private IFornecedorService _fornecedorService;
     private IContratoService _contratoService;
@@ -35,7 +35,7 @@ public class UpdateDataTestes
 
         _materialService = _serviceProvider.GetRequiredService<IMaterialService>();
         _fornecedorService = _serviceProvider.GetRequiredService<IFornecedorService>();
-        _timeService = _serviceProvider.GetRequiredService<ITimeService>();
+        _clubeService = _serviceProvider.GetRequiredService<IClubeService>();
         _contratoService = _serviceProvider.GetRequiredService<IContratoService>();
     }
 

@@ -7,28 +7,28 @@ namespace Contracts.Api.Controllers
     [ApiController]
     public class ContratosController : ControllerBase
     {
-        private readonly ITimeService _timeService;
+        private readonly IClubeService _clubeService;
         private readonly IMaterialService _materialService;
         private readonly IFornecedorService _fornecedorService;
         private readonly IContratoService _contratoService;
 
         public ContratosController(
-            ITimeService timeService,
+            IClubeService clubeService,
             IMaterialService materialService,
             IFornecedorService fornecedorService,
             IContratoService contratoService)
         {
-            _timeService = timeService;
+            _clubeService = clubeService;
             _materialService = materialService;
             _fornecedorService = fornecedorService;
             _contratoService = contratoService;
         }
 
-        [HttpGet("contracts/teams")]
-        public async Task<IActionResult> GetTeams()
+        [HttpGet("contracts/clubes")]
+        public async Task<IActionResult> GetClubes()
         {
-            var teams = await _timeService.GetAll();
-            return Ok(teams);
+            var clubes = await _clubeService.GetAll();
+            return Ok(clubes);
         }
 
         [HttpGet("contracts/materials")]
@@ -52,10 +52,10 @@ namespace Contracts.Api.Controllers
             return Ok(contracts);
         }
 
-        [HttpPost("contracts/teams")]
-        public async Task<IActionResult> PostTeams([FromBody] List<TeamDto> teamsDto)
+        [HttpPost("contracts/clubes")]
+        public async Task<IActionResult> PostClubes([FromBody] List<ClubeDto> clubesDto)
         {
-            await _timeService.Upsert(teamsDto);
+            await _clubeService.Upsert(clubesDto);
             return NoContent();
         }
 

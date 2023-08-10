@@ -27,6 +27,11 @@ namespace Contracts.Service
         {
             await _context.Database.ExecuteSqlRawAsync("delete from Fornecedor");
         }
+        public async Task Insert(Fornecedor fornecedor)
+        {
+            await _context.AddAsync(fornecedor);
+            await _context.SaveChangesAsync();
+        }
         public async Task InsertRange(List<FornecedorDto> fornecedorDto)
         {
             var fornecedores = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
@@ -44,7 +49,6 @@ namespace Contracts.Service
                 await _context.SaveChangesAsync();
             }
         }
-
         public async Task Upsert(List<FornecedorDto> fornecedorDto)
         {
             var dataSource = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
@@ -63,17 +67,28 @@ namespace Contracts.Service
 
             transaction.Commit();
         }
-
+        public async Task<Fornecedor> Get(int id)
+        {
+            return await _context.Set<Fornecedor>().FirstOrDefaultAsync(f => f.Id.Equals(id));
+        }
         public async Task<List<Fornecedor>> GetAll()
         {
             return await _context.Set<Fornecedor>().ToListAsync();
         }
-
         public async Task<List<FornecedorDto>> GetNewFakes(int qtd)
         {
-            return GetNewFakeSuppliers(qtd);
-        }
+            var faker = new Faker<FornecedorDto>("pt_BR")
+                .RuleFor(x => x.Nome, f => f.Company.CompanyName())
+                .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
+                .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
 
+            var response = faker.Generate(qtd);
+
+            var responseGroup = response.GroupBy(x => x.Documento)
+                .Select(g => g.First());
+
+            return responseGroup.ToList();
+        }
         public async Task<List<FornecedorDto>> GetMix(int qtd, bool withChanges)
         {
             var existingData = await _context.Set<Fornecedor>().ToListAsync();
@@ -87,7 +102,7 @@ namespace Contracts.Service
                 quantityForGenerateData += (quantityForGenerateData - existingData.Count);
             }
 
-            var newData = GetNewFakeSuppliers(quantityForGenerateData);
+            var newData = await GetNewFakes(quantityForGenerateData);
             existingData.Shuffle();
             existingData = existingData.Take(quantityForExistingData).ToList();
 
@@ -108,7 +123,6 @@ namespace Contracts.Service
 
             return result;
         }
-
         private static List<Fornecedor> GenerateFornecedorListFromFornecedorDtoList(List<FornecedorDto> fornecedorsDto)
         {
             return fornecedorsDto.Select(x => new Fornecedor
@@ -118,21 +132,6 @@ namespace Contracts.Service
                 Cep = x.Cep,
                 DataAlteracao = DateTime.Now
             }).ToList();
-        }
-
-        private List<FornecedorDto> GetNewFakeSuppliers(int quantity)
-        {
-            var faker = new Faker<FornecedorDto>("pt_BR")
-                .RuleFor(x => x.Nome, f => f.Company.CompanyName())
-                .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
-                .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
-
-            var response = faker.Generate(quantity);
-
-            var responseGroup = response.GroupBy(x => x.Documento)
-                .Select(g => g.First());
-
-            return responseGroup.ToList();
         }
     }
 }

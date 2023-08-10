@@ -4,21 +4,21 @@ using Contracts.Service.Interfaces;
 public class ConfigureTestes
 {
     private List<MaterialDto> _materials;
-    private List<TeamDto> _times;
+    private List<ClubeDto> _clubes;
     private List<FornecedorDto> _fornecedores;
 
-    private ITimeService _timeService;
+    private IClubeService _clubeService;
     private IMaterialService _materialService;
     private IFornecedorService _fornecedorService;
     private IContratoService _contratoService;
 
     public ConfigureTestes(
-        ITimeService timeService,
+        IClubeService clubeService,
         IMaterialService materialService,
         IFornecedorService fornecedorService,
         IContratoService contratoService)
     {
-        _timeService = timeService;
+        _clubeService = clubeService;
         _materialService = materialService;
         _fornecedorService = fornecedorService;
         _contratoService = contratoService;
@@ -28,21 +28,21 @@ public class ConfigureTestes
     {
         await _contratoService.CleanTable();
         await _materialService.CleanTable();
-        await _timeService.CleanTable();
+        await _clubeService.CleanTable();
         await _fornecedorService.CleanTable();
     }
 
     public async Task BuildPayloads(int qtd)
     {
         _materials = await _materialService.GetNewFakes(qtd);
-        _times = await _timeService.GetNewFakes(qtd);
+        _clubes = await _clubeService.GetNewFakes(qtd);
         _fornecedores = await _fornecedorService.GetNewFakes(qtd);
     }
 
     public async Task RunInsertOneByOne()
     {
         //Insert Clube
-        await _timeService.InsertRange(_times);
+        await _clubeService.InsertRange(_clubes);
 
         //Insert Material
         await _materialService.InsertRange(_materials);
@@ -57,7 +57,7 @@ public class ConfigureTestes
     public async Task RunInsertBulk(int qtdContratos = 200)
     {
         //Insert Clube
-        await _timeService.Upsert(_times);
+        await _clubeService.Upsert(_clubes);
 
         //Insert Material
         await _materialService.Upsert(_materials);

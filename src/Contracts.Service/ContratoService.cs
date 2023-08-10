@@ -144,15 +144,15 @@ namespace Contracts.Service
 
         private async Task<List<Contrato>> GenerateContratoListFromContratoDtoList(List<ContratoDto> contratosDto)
         {
-            var teams = await _context.Set<Clube>().Where(x => contratosDto.Select(x => x.NomeClube).Contains(x.Nome)).ToListAsync();
-            var suppliers = await _context.Set<Fornecedor>().Where(x => contratosDto.Select(x => x.DocumentoFornecedor).Contains(x.Documento)).ToListAsync();
-            var materials = await _context.Set<Material>().Where(x => contratosDto.Select(x => x.NumeroMaterial).Contains(x.Numero)).ToListAsync();
+            var clubes = await _context.Set<Clube>().Where(x => contratosDto.Select(x => x.NomeClube).Contains(x.Nome)).ToListAsync();
+            var fornecedores = await _context.Set<Fornecedor>().Where(x => contratosDto.Select(x => x.DocumentoFornecedor).Contains(x.Documento)).ToListAsync();
+            var materiais = await _context.Set<Material>().Where(x => contratosDto.Select(x => x.NumeroMaterial).Contains(x.Numero)).ToListAsync();
 
             var contracts = contratosDto.Select(x => new Contrato
             {
-                IdClube = teams.First(y => y.Nome.Equals(x.NomeClube)).Id,
-                IdFornecedor = suppliers.First(y => y.Documento.Equals(x.DocumentoFornecedor)).Id,
-                IdMaterial = materials.First(y => y.Numero.Equals(x.NumeroMaterial)).Id,
+                IdClube = clubes.First(y => y.Nome.Equals(x.NomeClube)).Id,
+                IdFornecedor = fornecedores.First(y => y.Documento.Equals(x.DocumentoFornecedor)).Id,
+                IdMaterial = materiais.First(y => y.Numero.Equals(x.NumeroMaterial)).Id,
                 Numero = x.Numero,
                 Preco = x.Preco,
                 Inicio = x.Inicio,
@@ -166,17 +166,17 @@ namespace Contracts.Service
 
         private async Task<List<ContratoDto>> GetNewFakeContracts(int quantity)
         {
-            var teamNames = await _context.Set<Clube>().AsNoTracking().Select(x => x.Nome).ToListAsync();
+            var clubeNames = await _context.Set<Clube>().AsNoTracking().Select(x => x.Nome).ToListAsync();
             var materialNumbers = await _context.Set<Material>().AsNoTracking().Select(x => x.Numero).ToListAsync();
             var supplierDocuments = await _context.Set<Fornecedor>().AsNoTracking().Select(x => x.Documento).ToListAsync();
 
-            if (!teamNames.Any() || !materialNumbers.Any() || !supplierDocuments.Any())
+            if (!clubeNames.Any() || !materialNumbers.Any() || !supplierDocuments.Any())
             {
                 return new List<ContratoDto>();
             }
 
             var faker = new Faker<ContratoDto>("pt_BR")
-                .RuleFor(x => x.NomeClube, f => f.PickRandom(teamNames))
+                .RuleFor(x => x.NomeClube, f => f.PickRandom(clubeNames))
                 .RuleFor(x => x.Descricao, f => $"Descrição do contrato data - {DateTime.Now}")
                 .RuleFor(x => x.NumeroMaterial, f => f.PickRandom(materialNumbers))
                 .RuleFor(x => x.DocumentoFornecedor, f => f.PickRandom(supplierDocuments))

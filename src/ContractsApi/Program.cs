@@ -16,7 +16,7 @@ builder.Services.AddSwaggerConfiguration();
 builder.Services.ConfigureMergeBuilder();
 builder.Services.AddEntityFrameworkConfiguration(builder.Configuration);
 
-builder.Services.AddScoped<ITimeService, TimeService>();
+builder.Services.AddScoped<IClubeService, ClubeService>();
 builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<IContratoService, ContratoService>();
