@@ -1,14 +1,20 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Engines;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 [RPlotExporter]
+[SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
 public class TesteUpdateCompleto
 {
     private ServiceProvider _serviceProvider;
     private IContratoService _contratoService;
 
+    //|         Method |       Mean |      Error |     StdDev |     Median |
+    //|--------------- |-----------:|-----------:|-----------:|-----------:|
+    //| UpdateOneByOne | 9,374.0 ms | 4,796.4 ms | 1,245.6 ms | 8,974.7 ms |
+    //|         Upsert |   640.1 ms | 3,296.8 ms |   856.2 ms |   283.1 ms |
 
     [GlobalSetup]
     public async Task Setup()

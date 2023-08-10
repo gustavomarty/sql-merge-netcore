@@ -24,7 +24,8 @@ internal class Program
             })
             .Build();
 
-        await TesteUpsert(host);
+        //await TesteUpsert(host);
+        await TesteUpdateCompleto(host);
 
     }
 
@@ -36,8 +37,8 @@ internal class Program
         //Configure Data
         var configurationService = host.Services.GetService<ConfigureTestes>();
         await configurationService!.CleanTables();
-        await configurationService!.BuildPayloads(400);
-        await configurationService!.RunInsertBulk(400);
+        await configurationService!.BuildPayloads(1000);
+        await configurationService!.RunInsertBulk(1000);
 
         BenchmarkRunner.Run<TesteUpdateCompleto>();
     }

@@ -1,5 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,11 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 [RPlotExporter]
 public class TesteUpsertDadosNovosEUpdate
 {
-    private List<FornecedorDto> _fornecedores;
-
     private ServiceProvider _serviceProvider;
     private IFornecedorService _fornecedorService;
 
+    //|          Method |        Mean |        Error |       StdDev |
+    //|---------------- |------------:|-------------:|-------------:|
+    //| ExecuteOneByOne | 90,678.0 ms | 12,179.04 ms | 35,910.18 ms |
+    //|   ExecuteUpsert |    242.7 ms |      8.07 ms |     23.41 ms |
 
     [GlobalSetup]
     public async Task Setup()
