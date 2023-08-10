@@ -2,7 +2,9 @@
 using Bulk.Models;
 using Bulk.Models.Enumerators;
 using Bulk.Services;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 
 namespace Bulk
@@ -51,8 +53,9 @@ namespace Bulk
     /// </typeparam>
     public class MergeBuilder<TEntity> where TEntity : class
     {
-        private string _tableName;
         private readonly IDatabaseService _databaseService;
+
+        private string _tableName;
 
         private string StatusColumn { get; set; } = string.Empty;
         private string PrimaryKey { get; set; } = string.Empty;
@@ -323,9 +326,6 @@ namespace Bulk
         /// </returns>
         public MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
         {
-            if(transaction == null || transaction.Connection == null)
-                throw new Exception("");
-
             DbTransaction = transaction;
             return this;
         }
@@ -338,21 +338,38 @@ namespace Bulk
         /// </returns>
         public async Task<string> Execute()
         {
-            if(DbTransaction == null || DbTransaction.Connection == null)
-                throw new Exception("");
+            ValidateBuilderPreExecute();
 
             SetAllColumns();
-            SetPrimaryKeyColumn(DbTransaction);
+            SetPrimaryKeyColumn(DbTransaction!);
 
             CheckSnakeCaseOnExecuteCommand();
 
-            CreateTempTable(DbTransaction.Connection);
-            await PopulateTempTable(DbTransaction);
-            ExecuteMergeCommand(DbTransaction.Connection);
+            CreateTempTable(DbTransaction!);
+            await PopulateTempTable(DbTransaction!);
+            ExecuteMergeCommand(DbTransaction!);
 
-            DropTempTable(DbTransaction.Connection);
+            DropTempTable(DbTransaction!);
 
             return "Deu boa!!";
+        }
+
+        private void ValidateBuilderPreExecute()
+        {
+            if(DbTransaction == null)
+                throw new Exception("");
+
+            if(DbTransaction.Connection == null)
+                throw new Exception("");
+
+            if(!MergedColumns.Any())
+                throw new Exception("");
+
+            if(!UpdatedColumns.Any())
+                throw new Exception("");
+
+            if(!DataSource.Any())
+                throw new Exception("");
         }
 
         private void SetAllColumns()
@@ -370,24 +387,24 @@ namespace Bulk
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
         {
-            PrimaryKey = _databaseService.GetPrimaryKeyByTableName(dbTransaction, _tableName);
+            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName);
+
+            var result = _databaseService.ExecuteScalarCommand(dbTransaction, query);
+
+            PrimaryKey = result?.ToString() ?? string.Empty;
 
             if(SnakeCaseNamingConvention)
                 PrimaryKey = PrimaryKey.ToSnakeCase();
         }
 
-        private void ExecuteMergeCommand(IDbConnection dbConnection)
+        private void ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
             var allColumnsWithoutIgnoredInsert = AllColumns.Except(IgnoredOnInsertOperation).ToList();
             var allColumnsWithoutIgnoredUpdate = UpdatedColumns.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).ToList();
 
             var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, allColumnsWithoutIgnoredUpdate, allColumnsWithoutIgnoredInsert, Conditions, StatusColumn);
-            var sqlCommand = dbConnection.CreateCommand();
-
-            sqlCommand.Transaction = DbTransaction;
-            sqlCommand.CommandText = stringBuilderQuery.ToString();
-
-            sqlCommand.ExecuteNonQuery();
+            
+            _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
         }
 
         private void CheckSnakeCaseOnExecuteCommand()
@@ -408,14 +425,11 @@ namespace Bulk
             }).ToList();
         }
 
-        private void CreateTempTable(IDbConnection dbConnection)
+        private void CreateTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = dbConnection.CreateCommand();
+            var sqlCommand = SqlBuilder.BuildTempTable(_tableName);
 
-            sqlCommand.Transaction = DbTransaction;
-            sqlCommand.CommandText = SqlBuilder.BuildTempTable(_tableName);
-
-            sqlCommand.ExecuteNonQuery();
+            _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
@@ -423,14 +437,11 @@ namespace Bulk
             await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}");
         }
 
-        private void DropTempTable(IDbConnection dbConnection)
+        private void DropTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = dbConnection.CreateCommand();
+            var sqlCommand = SqlBuilder.BuildDropTempTable(_tableName);
 
-            sqlCommand.Transaction = DbTransaction;
-            sqlCommand.CommandText = SqlBuilder.BuildDropTempTable(_tableName);
-
-            sqlCommand.ExecuteNonQuery();
+            _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }
 
         private static List<string> GetColumns(Expression<Func<TEntity, object>> expressions)

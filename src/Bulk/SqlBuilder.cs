@@ -14,11 +14,7 @@ namespace Bulk
 
         public static string BuildPrimaryKeyQuery(string tableName)
         {
-            return @$"
-                select column_name from information_schema.key_column_usage
-                where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1
-                and table_name = '{tableName}'
-            ";
+            return @$"select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{tableName}'";
         }
 
         public static StringBuilder BuildMerge(

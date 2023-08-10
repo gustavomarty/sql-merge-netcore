@@ -20,18 +20,26 @@ namespace Bulk.Services
             await bulkInsert.WriteToServerAsync(dataReader);
         }
 
-        public string GetPrimaryKeyByTableName(IDbTransaction dbTransaction, string tableName)
+        public object? ExecuteScalarCommand(IDbTransaction dbTransaction, string command)
         {
-            var query = SqlBuilder.BuildPrimaryKeyQuery(tableName);
-
             var sqlCommand = dbTransaction!.Connection!.CreateCommand();
 
             sqlCommand.Transaction = dbTransaction;
-            sqlCommand.CommandText = query;
+            sqlCommand.CommandText = command;
 
-            var pkField = sqlCommand.ExecuteScalar();
+            var obj = sqlCommand.ExecuteScalar();
 
-            return pkField?.ToString() ?? string.Empty;
+            return obj;
+        }
+
+        public void ExecuteNonQueryCommand(IDbTransaction dbTransaction, string command)
+        {
+            var sqlCommand = dbTransaction!.Connection!.CreateCommand();
+
+            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.CommandText = command;
+
+            sqlCommand.ExecuteNonQuery();
         }
     }
 }
