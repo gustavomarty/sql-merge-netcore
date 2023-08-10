@@ -58,6 +58,7 @@ namespace Bulk
         private string _tableName;
 
         private string StatusColumn { get; set; } = string.Empty;
+        private bool UseEnumStatus { get; set; } = false;
         private string PrimaryKey { get; set; } = string.Empty;
         private bool SnakeCaseNamingConvention { get; set; }
 
@@ -119,10 +120,17 @@ namespace Bulk
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, ColumnType>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, object>> expression)
             where ColumnType : struct
         {
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+            return this;
+        }
+
+        public MergeBuilder<TEntity> UseEnumStatusConfiguration(Expression<Func<TEntity, object>> expression)
+        {
+            UseEnumStatus = true;
+            StatusColumn = GetColumns(expression).First();
             return this;
         }
 
@@ -399,10 +407,11 @@ namespace Bulk
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
-            var allColumnsWithoutIgnoredInsert = AllColumns.Except(IgnoredOnInsertOperation).ToList();
-            var allColumnsWithoutIgnoredUpdate = UpdatedColumns.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).ToList();
+            // @TODO revisar esses excepts
+            var allColumnsWithoutIgnoredAndStatusInsert = AllColumns.Except(IgnoredOnInsertOperation).Except(new List<string> { StatusColumn }).ToList();
+            var allColumnsWithoutIgnoredAndStatusUpdate = UpdatedColumns.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).Except(new List<string> { StatusColumn }).ToList();
 
-            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, allColumnsWithoutIgnoredUpdate, allColumnsWithoutIgnoredInsert, Conditions, StatusColumn);
+            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, allColumnsWithoutIgnoredAndStatusUpdate, allColumnsWithoutIgnoredAndStatusInsert, Conditions, StatusColumn, UseEnumStatus);
             
             _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
         }

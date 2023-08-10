@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 /// -->> Executa o comparativo de forma unitária e com Upsert
 /// </summary>
 [RPlotExporter]
-[SimpleJob(RunStrategy.ColdStart, iterationCount: 10)]
+[SimpleJob(RunStrategy.ColdStart, iterationCount: 3)]
 public class TesteUpsertDadosNovosEUpdate
 {
     //|          Method |        Mean |      Error |     StdDev |      Median |

@@ -47,6 +47,7 @@ namespace Contracts.Service
                 fornecedor.DataAlteracao = DateTime.Now;
                 fornecedor.Nome = fornecedorDto.Nome;
                 fornecedor.Cep = fornecedorDto.Cep;
+                fornecedor.Status = BulkStatus.ALTERADO;
 
                 await _context.SaveChangesAsync();
             }
@@ -65,6 +66,7 @@ namespace Contracts.Service
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnIsertOperation(x => x.Id)
+                .UseEnumStatusConfiguration(x => x.Status)
                 .Execute();
 
             transaction.Commit();
@@ -80,6 +82,7 @@ namespace Contracts.Service
         public async Task<List<FornecedorDto>> GetNewFakes(int qtd)
         {
             var faker = new Faker<FornecedorDto>("pt_BR")
+                .RuleFor(x => x.Status, f => BulkStatus.INSERIDO)
                 .RuleFor(x => x.Nome, f => f.Company.CompanyName())
                 .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
                 .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
@@ -122,6 +125,7 @@ namespace Contracts.Service
 
                 return new FornecedorDto
                 {
+                    Status = BulkStatus.INSERIDO,
                     Nome = changeItems ? $"ALTERADO: {x.Nome}" : x.Nome,
                     Documento = x.Documento,
                     Cep = x.Cep
@@ -137,7 +141,8 @@ namespace Contracts.Service
                 Nome = x.Nome,
                 Documento = x.Documento,
                 Cep = x.Cep,
-                DataAlteracao = DateTime.Now
+                DataAlteracao = DateTime.Now,
+                Status = x.Status
             }).ToList();
         }
     }

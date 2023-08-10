@@ -26,6 +26,9 @@ namespace Contracts.Data.Data.Maps
                 .HasMaxLength(20)
                 .IsRequired();
 
+            builder.Property(x => x.Status)
+                .IsRequired();
+
             builder.Property(x => x.DataAlteracao)
                 .IsRequired();
 

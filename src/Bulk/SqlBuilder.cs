@@ -23,7 +23,8 @@ namespace Bulk
             List<string> updatedColumns, 
             List<string> insertedColumns,
             List<ConditionBuilder> conditions,
-            string statusColumn
+            string statusColumn,
+            bool useEnumStatus
         )
         {
             var stringBuilderQuery = new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ");
@@ -33,10 +34,10 @@ namespace Bulk
             BuildConditions(stringBuilderQuery, conditions);
 
             stringBuilderQuery.Append($" then \n update set ");
-            BuildUpdatedColumns(stringBuilderQuery, updatedColumns, statusColumn);
+            BuildUpdatedColumns(stringBuilderQuery, updatedColumns, statusColumn, useEnumStatus);
 
             stringBuilderQuery.Append($"\n when not matched then \n insert values (");
-            BuildInsertedColumns(stringBuilderQuery, insertedColumns, statusColumn);
+            BuildInsertedColumns(stringBuilderQuery, insertedColumns, statusColumn, useEnumStatus);
 
             BuildOutput(stringBuilderQuery);
 
@@ -81,7 +82,7 @@ namespace Bulk
                 stringBuilderQuery.Append(')');
             }
         }
-        private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn)
+        private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn, bool useEnumStatus)
         {
             for (int i = 0; i < UpdatedColumns.Count; i++)
             {
@@ -92,9 +93,15 @@ namespace Bulk
             }
 
             if (!string.IsNullOrWhiteSpace(StatusColumn))
-                stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkStatus.ALTERAR}'");
+            {
+                if (useEnumStatus)
+                    stringBuilderQuery.Append($", tgt.{StatusColumn} = {(int)BulkStatus.ALTERADO}");
+                else
+                    stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkStatus.ALTERADO}'");
+
+            }
         }
-        private static void BuildInsertedColumns(StringBuilder stringBuilderQuery, List<string> InsertedColumns, string StatusColumn)
+        private static void BuildInsertedColumns(StringBuilder stringBuilderQuery, List<string> InsertedColumns, string StatusColumn, bool useEnumStatus)
         {
             for (int i = 0; i < InsertedColumns.Count; i++)
             {
@@ -105,7 +112,12 @@ namespace Bulk
             }
 
             if (!string.IsNullOrWhiteSpace(StatusColumn))
-                stringBuilderQuery.Append($", '{BulkStatus.INSERIR}'");
+            {
+                if (useEnumStatus)
+                    stringBuilderQuery.Append($", {(int)BulkStatus.INSERIDO}");
+                else
+                    stringBuilderQuery.Append($", '{BulkStatus.INSERIDO}'");
+            }
         }   
         private static void BuildOutput(StringBuilder stringBuilderQuery)
         {

@@ -2,8 +2,8 @@
 {
     public enum BulkStatus
     {
-        ALTERAR = 1,
-        INSERIR = 2,
-        PROCESSADO = 3
+        PROCESSADO = 0,
+        ALTERADO = 1,
+        INSERIDO = 2
     }
 }
