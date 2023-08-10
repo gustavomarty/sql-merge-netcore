@@ -67,9 +67,9 @@ namespace Contracts.Service
 
             transaction.Commit();
         }
-        public async Task<Fornecedor> Get(int id)
+        public async Task<Fornecedor> Get(string documento)
         {
-            return await _context.Set<Fornecedor>().FirstOrDefaultAsync(f => f.Id.Equals(id));
+            return await _context.Set<Fornecedor>().FirstOrDefaultAsync(f => f.Documento.Equals(documento));
         }
         public async Task<List<Fornecedor>> GetAll()
         {

@@ -39,21 +39,6 @@ public class ConfigureTestes
         _fornecedores = await _fornecedorService.GetNewFakes(qtd);
     }
 
-    public async Task RunInsertOneByOne()
-    {
-        //Insert Clube
-        await _clubeService.InsertRange(_clubes);
-
-        //Insert Material
-        await _materialService.InsertRange(_materials);
-
-        //Insert Fornecedor
-        await _fornecedorService.InsertRange(_fornecedores);
-
-        //Insert Contrato
-        await _contratoService.InsertRange(await _contratoService.GetNewFakes(100));
-    }
-
     public async Task RunInsertBulk(int qtdContratos = 200)
     {
         //Insert Clube

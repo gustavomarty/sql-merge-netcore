@@ -1,23 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 [RPlotExporter]
-public class UpdateDataTestes
+public class TesteUpdateCompleto
 {
-    //[Params(100, 1000)]
-    //public int N;
-
-    private List<MaterialDto> _materials;
-    private List<ClubeDto> _clubes;
-    private List<FornecedorDto> _fornecedores;
-
     private ServiceProvider _serviceProvider;
-    private IClubeService _clubeService;
-    private IMaterialService _materialService;
-    private IFornecedorService _fornecedorService;
     private IContratoService _contratoService;
 
 
@@ -29,13 +18,8 @@ public class UpdateDataTestes
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
         IConfigurationRoot configuration = configurationBuilder.Build();
-        //EntityFrameworkManager.ContextFactory = context => new ApplicationContext(Program.GetDbContextOptions(configuration));
 
         _serviceProvider = Program.GetServiceProvider(configuration);
-
-        _materialService = _serviceProvider.GetRequiredService<IMaterialService>();
-        _fornecedorService = _serviceProvider.GetRequiredService<IFornecedorService>();
-        _clubeService = _serviceProvider.GetRequiredService<IClubeService>();
         _contratoService = _serviceProvider.GetRequiredService<IContratoService>();
     }
 

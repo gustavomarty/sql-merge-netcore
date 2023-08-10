@@ -1,13 +1,11 @@
-﻿using Contracts.Service;
+﻿using Bulk.Extensions;
+using Contracts.Service;
+using BenchmarkDotNet.Running;
 using Microsoft.Extensions.Hosting;
 using Contracts.Service.Interfaces;
 using Contracts.Data.Configurations;
-using Microsoft.Extensions.DependencyInjection;
-using BenchmarkDotNet.Running;
-using Contracts.Data.Data.Entities;
-using Contracts.Data.Data;
 using Microsoft.Extensions.Configuration;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 internal class Program
 {
@@ -16,6 +14,7 @@ internal class Program
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((context, services) =>
             {
+                services.ConfigureMergeBuilder();
                 services.AddEntityFrameworkConfiguration(context.Configuration);
                 services.AddScoped<IClubeService, ClubeService>();
                 services.AddScoped<IFornecedorService, FornecedorService>();
@@ -25,21 +24,30 @@ internal class Program
             })
             .Build();
 
+        await TesteUpsert(host);
+
+    }
+
+    /// <summary>
+    /// Teste de um update completo em todas as entidades (unitário vs upsert)
+    /// </summary>
+    static async Task TesteUpdateCompleto(IHost host)
+    {
         //Configure Data
-        var insertTestsDebug = host.Services.GetService<ConfigureTestes>();
-        var contratoService = host.Services.GetService<IContratoService>();
-        await insertTestsDebug!.CleanTables();
-        await insertTestsDebug!.BuildPayloads(400);
-        await insertTestsDebug!.RunInsertBulk(400);
+        var configurationService = host.Services.GetService<ConfigureTestes>();
+        await configurationService!.CleanTables();
+        await configurationService!.BuildPayloads(400);
+        await configurationService!.RunInsertBulk(400);
 
-        //var teste = await contratoService.GetMixAll();
-        //await contratoService.Upsert(teste);
+        BenchmarkRunner.Run<TesteUpdateCompleto>();
+    }
 
-        //Run Benchmark
-        BenchmarkRunner.Run<UpdateDataTestes>();
-
-
-        await host.RunAsync();
+    /// <summary>
+    /// Teste de um Upsert, com dados novos, alterados e imutáveis
+    /// </summary>
+    static async Task TesteUpsert(IHost host)
+    {
+        BenchmarkRunner.Run<TesteUpsertDadosNovosEUpdate>();
     }
 
     public static ServiceProvider GetServiceProvider(IConfiguration configuration)
@@ -53,21 +61,11 @@ internal class Program
 
     static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.ConfigureMergeBuilder();
         services.AddEntityFrameworkConfiguration(configuration);
         services.AddScoped<IClubeService, ClubeService>();
         services.AddScoped<IFornecedorService, FornecedorService>();
         services.AddScoped<IMaterialService, MaterialService>();
         services.AddScoped<IContratoService, ContratoService>();
     }
-
-    //public static DbContextOptions<ApplicationContext> GetDbContextOptions(IConfiguration configuration)
-    //{
-    //    string? connectionString = configuration["ConnectionStrings:SqlServerConnection"];
-
-    //    DbContextOptionsBuilder<ApplicationContext> optionsBuilder = new DbContextOptionsBuilder<ApplicationContext>()
-    //        .UseSqlServer(connectionString);
-
-    //    return optionsBuilder.Options;
-    //}
-
 }
