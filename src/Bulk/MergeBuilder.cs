@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Data;
 using System.Data.Common;
 using System.Linq.Expressions;
+using static Azure.Core.HttpHeader;
 
 namespace Bulk
 {
@@ -407,13 +408,32 @@ namespace Bulk
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
-            // @TODO revisar esses excepts
-            var allColumnsWithoutIgnoredAndStatusInsert = AllColumns.Except(IgnoredOnInsertOperation).Except(new List<string> { StatusColumn }).ToList();
-            var allColumnsWithoutIgnoredAndStatusUpdate = UpdatedColumns.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).Except(new List<string> { StatusColumn }).ToList();
-
-            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, allColumnsWithoutIgnoredAndStatusUpdate, allColumnsWithoutIgnoredAndStatusInsert, Conditions, StatusColumn, UseEnumStatus);
+            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns), RemoveIgnoredAndDuplicatedInsertColumns(AllColumns), Conditions, StatusColumn, UseEnumStatus);
             
             _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
+        }
+
+        private List<string> RemoveIgnoredAndDuplicatedInsertColumns(List<string> listColumn)
+        {
+            ValidateAndRemoveStatusColumn(listColumn);
+            listColumn = listColumn.Except(IgnoredOnInsertOperation).ToList();
+            return listColumn;
+        }
+
+        private List<string> RemoveIgnoredAndDuplicatedUpdateColumns(List<string> listColumn)
+        {
+            ValidateAndRemoveStatusColumn(listColumn);
+            listColumn = listColumn.Where(x => !x.Equals(PrimaryKey, StringComparison.OrdinalIgnoreCase)).ToList();
+            return listColumn;
+        }
+
+        private void ValidateAndRemoveStatusColumn(List<string> listColumns)
+        {
+            if (StatusColumn != null)
+            {
+                listColumns.Remove(StatusColumn);
+                listColumns.Remove(StatusColumn.ToSnakeCase());
+            }
         }
 
         private void CheckSnakeCaseOnExecuteCommand()

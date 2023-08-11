@@ -25,19 +25,19 @@ internal class Program
             .Build();
 
 
-        //var _fornecedorService = host.Services.GetService<IFornecedorService>();
+        var _fornecedorService = host.Services.GetService<IFornecedorService>();
 
-        ////Configura o banco com os 100 primeiros fornecedores
-        ////await _fornecedorService.CleanTable();
-        ////await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
+        //Configura o banco com os 100 primeiros fornecedores
+        //await _fornecedorService.CleanTable();
+        //await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
 
-        //var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
+        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
 
-        ////Roda upsert
-        //await _fornecedorService.Upsert(fornecedoresMix);
+        //Roda upsert
+        await _fornecedorService.Upsert(fornecedoresMix);
 
 
-        await TesteUpsert(host);
+        //await TesteUpsert(host);
         //await TesteUpdateCompleto(host);
         //await TesteUpdateMetadeDadosEditados(host);
 
