@@ -62,8 +62,7 @@ namespace Bulk.Tests
             var result = await builder.Execute();
 
             //ASSERT
-            Assert.NotNull(result);
-            Assert.Equal("Deu boa!!", result);
+            Assert.True(result);
 
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);

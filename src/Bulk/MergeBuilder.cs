@@ -1,12 +1,9 @@
-﻿using Bulk.Extensions;
+﻿using System.Data;
 using Bulk.Models;
-using Bulk.Models.Enumerators;
 using Bulk.Services;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Data;
-using System.Data.Common;
+using Bulk.Extensions;
+using Bulk.Models.Enumerators;
 using System.Linq.Expressions;
-using static Azure.Core.HttpHeader;
 
 namespace Bulk
 {
@@ -128,6 +125,7 @@ namespace Bulk
             return this;
         }
 
+        //TODO: Validar uso desse método e documentar
         public MergeBuilder<TEntity> UseEnumStatusConfiguration(Expression<Func<TEntity, object>> expression)
         {
             UseEnumStatus = true;
@@ -345,7 +343,7 @@ namespace Bulk
         /// <returns>
         /// Retorna o resultado do merge.
         /// </returns>
-        public async Task<string> Execute()
+        public async Task<bool> Execute()
         {
             ValidateBuilderPreExecute();
 
@@ -360,25 +358,25 @@ namespace Bulk
 
             DropTempTable(DbTransaction!);
 
-            return "Deu boa!!";
+            return true;
         }
 
         private void ValidateBuilderPreExecute()
         {
             if(DbTransaction == null)
-                throw new Exception("");
+                throw new Exception("Transação não informada.");
 
             if(DbTransaction.Connection == null)
-                throw new Exception("");
+                throw new Exception("Transação não informada.");
 
             if(!MergedColumns.Any())
-                throw new Exception("");
+                throw new Exception("Informe o parametro MergedColumns");
 
             if(!UpdatedColumns.Any())
-                throw new Exception("");
+                throw new Exception("Informe o parametro UpdatedColumns");
 
             if(!DataSource.Any())
-                throw new Exception("");
+                throw new Exception("Informe o parametro Datasource");
         }
 
         private void SetAllColumns()
