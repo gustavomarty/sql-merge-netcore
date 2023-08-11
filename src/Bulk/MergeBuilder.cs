@@ -121,7 +121,7 @@ namespace Bulk
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, object>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, ColumnType>> expression)
             where ColumnType : struct
         {
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
