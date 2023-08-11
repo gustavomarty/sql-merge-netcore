@@ -1,2 +1,7 @@
 # sql-merge-netcore
-Code to execute a Sql Merge
+
+##Estrutura do projeto:
+
+-> Component
+
+-> Poc
