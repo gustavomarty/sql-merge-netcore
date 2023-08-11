@@ -98,6 +98,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Torna todos os nomes de atributos/tabelas do banco snake_case. (Default = FALSE).
         /// </summary>
         /// <remarks>
@@ -111,6 +112,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Caso queira usar uma coluna(STRUCT) de status para executar o merge. (Default = FALSE).
         /// </summary>
         /// <typeparam name="ColumnType">O tipo de coluna que será utilizada como status</typeparam>
@@ -134,6 +136,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Caso queira usar uma coluna(STRING) de status para executar o merge. (Default = FALSE).
         /// </summary>
         /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/></param>
@@ -147,6 +150,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Obrigatório]</para>
         /// Configura quais colunas serão utilizadas no comando merge.
         /// </summary>
         /// <remarks>
@@ -169,6 +173,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Obrigatório]</para>
         /// Configura quais colunas serão atualizadas no comando merge (update).
         /// </summary>
         /// <remarks>
@@ -193,6 +198,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Configura as condições antes de seguir com o comando merge.
         /// </summary>
         /// <remarks>
@@ -225,6 +231,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Configura as condições antes de seguir com o comando merge.
         /// </summary>
         /// <remarks>
@@ -255,6 +262,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Configura as condições antes de seguir com o comando merge.
         /// </summary>
         /// <remarks>
@@ -284,6 +292,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Opcional]</para>
         /// Configura as colunas que devem ser ignoradas na clausula INSERT
         /// </summary>
         /// <remarks>
@@ -306,6 +315,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Obrigatório]</para>
         /// Configura os dados que iram ser utilizados no comando merge.
         /// <br>
         /// Os dados devem ser uma lista de <see cref="TEntity"/>.
@@ -322,6 +332,7 @@ namespace Bulk
         }
 
         /// <summary>
+        /// <para>[Obrigatório]</para>
         /// Configura a transação de banco que será usada para realizar o comando.
         /// <br>
         /// Lembrando que NADA é commitado.
