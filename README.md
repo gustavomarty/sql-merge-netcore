@@ -88,8 +88,12 @@ Pare configurar o builder, os possuímos os parâmetros:
 - SetIgnoreOnIsertOperation [**opcional**]:
   - Podemos configurar colunar que são ignoradas ao realizar a instrução de inserção, como por exemplo campos *auto identity* ou colunas que você simplesmente não queira utilizar na inserção do registro.
 
+        .SetIgnoreOnIsertOperation(x => x.Id)
+
 - UseStatusConfiguration [**opcional**]:
   - Utilize uma coluna de status em sua tabela de destino para receber a informação se, após a execução do comando merge, o registro foi alterado, inserido ou simplesmente não foi afetado. 
+
+        .UseStatusConfiguration(x => x.Status)
     
 - UseEnumStatusConfiguration [**opcional**]:
   - Mesmo objetivo do parâmetro *UseStatusConfiguration*, porém utiliza como status em sua coluna de destino o enumerador fornecido pela bibliotea, tratando-o como tipo *int* no banco de dados.
@@ -97,11 +101,15 @@ Pare configurar o builder, os possuímos os parâmetros:
  
         PROCESSADO = 0,
         ALTERADO = 1,
-        INSERIDO = 2 
+        INSERIDO = 2
+
+        .UseStatusConfiguration(x => x.Status)
 
 - UseSnakeCaseNamingConvention [**opcional**]:
   - Caso utilize em seu banco de dados alguma [convensão](https://github.com/efcore/EFCore.NamingConventions) específica, a biblioteca da suporte a:
       - *UseSnakeCaseNamingConvention*
+
+            .UseSnakeCaseNamingConvention()
 
 ## Benchmarks
 
