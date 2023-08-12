@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk", "Bulk\Bulk.csproj", "{8744E6D4-D951-44E4-9DBB-D4187A485E13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk", "Component\Bulk\Bulk.csproj", "{8744E6D4-D951-44E4-9DBB-D4187A485E13}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Api", "ContractsApi\Contracts.Api.csproj", "{F39DF18A-F7D6-42F9-ADAE-5115C4BA3A09}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Api", "Poc\ContractsApi\Contracts.Api.csproj", "{F39DF18A-F7D6-42F9-ADAE-5115C4BA3A09}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "Benchmark\Benchmark.csproj", "{34328500-6187-47FA-8DFE-D20D98A675A8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Data", "Contracts.Data\Contracts.Data.csproj", "{35F33DAE-5A53-43E5-BB93-ECE14F27CC4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Data", "Poc\Contracts.Data\Contracts.Data.csproj", "{35F33DAE-5A53-43E5-BB93-ECE14F27CC4E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Service", "Contracts.Service\Contracts.Service.csproj", "{7C24E0A0-CB9F-4945-BDC2-B2B1DCF01ADE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Service", "Poc\Contracts.Service\Contracts.Service.csproj", "{7C24E0A0-CB9F-4945-BDC2-B2B1DCF01ADE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmark", "Benchmark", "{EE3DC861-1575-4C87-B0CB-E82E614D8F9A}"
 EndProject
@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Component", "Component", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Poc", "Poc", "{BBE5B81D-12EE-4501-8B20-2CF86BE5C6C3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Tests", "Bulk.Tests\Bulk.Tests.csproj", "{40EB30CC-753E-4C00-A5BD-6ACC6197C365}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Tests", "Component\Bulk.Tests\Bulk.Tests.csproj", "{40EB30CC-753E-4C00-A5BD-6ACC6197C365}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,7 +61,7 @@ Global
 		{34328500-6187-47FA-8DFE-D20D98A675A8} = {EE3DC861-1575-4C87-B0CB-E82E614D8F9A}
 		{35F33DAE-5A53-43E5-BB93-ECE14F27CC4E} = {BBE5B81D-12EE-4501-8B20-2CF86BE5C6C3}
 		{7C24E0A0-CB9F-4945-BDC2-B2B1DCF01ADE} = {BBE5B81D-12EE-4501-8B20-2CF86BE5C6C3}
-		{40EB30CC-753E-4C00-A5BD-6ACC6197C365} = {EE3DC861-1575-4C87-B0CB-E82E614D8F9A}
+		{40EB30CC-753E-4C00-A5BD-6ACC6197C365} = {B8B283FC-DF0F-4393-8577-AF0F451B214F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2358DEAB-D5F2-4C83-B15D-4E5CA9C7EAED}

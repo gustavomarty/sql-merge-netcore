@@ -37,8 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Contracts.Data\Contracts.Data.csproj" />
-    <ProjectReference Include="..\Contracts.Service\Contracts.Service.csproj" />
+    <ProjectReference Include="..\Component\Bulk\Bulk.csproj" />
+    <ProjectReference Include="..\Poc\Contracts.Data\Contracts.Data.csproj" />
+    <ProjectReference Include="..\Poc\Contracts.Service\Contracts.Service.csproj" />
   </ItemGroup>
 
 </Project>
