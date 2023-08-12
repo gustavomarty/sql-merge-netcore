@@ -45,28 +45,63 @@ Após configurar todos os parâmetros desejados, basta invocar o método *Execut
 Pare configurar o builder, os possuímos os parâmetros:
 
 - SetDataSource [**obrigatório**]:
-  - teste
+  - Lista de objetos que deseja adicionar, mesclar ou atualizar no banco de dados. Deve possuir a mesma estrutura da tabela do banco.
+
+        .SetDataSource(dataSource)
 
 - SetMergeColumns [**obrigatório**]:
-  - teste
+  - Lista de campos que deseja utilizar para comparar se o mesmo existe ou não na tabela de destino.
+  - Caso as colunas comparadas existam, o comando entenderá uma atualização. Caso contrário, um novo registro será inserido.
+  - Uma ou mais colunas podem ser configuradas, desde que elas existam na entidade configurada.
+
+        .SetMergeColumns(x => x.Documento)
 
 - SetUpdatedColumns [**obrigatório**]:
-  - teste
+  - Colunas que serão afetadas no caso de uma atualização na tabela de destino.
+  - Podemos configurar para executar em todas:
+
+        .SetUpdatedColumns(x => x)
+  
+  - Podemos também configurar as colunas individualmente, sendo uma ou várias:
+
+        .SetUpdatedColumns(x => new { x.Cep, x.Nome } )
+
 
 - SetTransaction [**obrigatório**]:
-  - teste
+  - Precisamos disponibilizar uma transação para a biblioteca realizar o comando no banco de dados.
+  - Ao realizar a operação, você precisa realizar o commit no banco de dados para efetivar as alterações.
+ 
+        .SetTransaction(transaction.GetDbTransaction())  
 
 - WithCondition [**opcional**]:
-  - teste
+  - Podemos configurar condições para o comando só realizar as alterações em registros existentes e que realmente sofreram alterações.
+  - Antes de realizar o update, o comando checa se os campos que você deseja comparar estão diferentes entre o *data source* e a tabela de destino, evitando processamento desnecessário no banco de dados.
+  - As condições devem ser configuradas citando um tipo de operação - quanto utilizada mais de uma coluna - (*AND* ou *OR*) e o tipo de comparação (*EQUAL* ou *NOT_EQUAL*).
+  - Exemplo utilizando uma comparação *NOT_EQUAL* em duas colunas com instrução *OU*:
 
+           .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
+
+  - Exemplo utilizando uma comparação *EQUAL* em uma coluna:
+
+           .WithCondition(ConditionTypes.EQUALS, x => x.Nome)
+  
 - SetIgnoreOnIsertOperation [**opcional**]:
-  - teste
+  - Podemos configurar colunar que são ignoradas ao realizar a instrução de inserção, como por exemplo campos *auto identity* ou colunas que você simplesmente não queira utilizar na inserção do registro.
 
+- UseStatusConfiguration [**opcional**]:
+  - Utilize uma coluna de status em sua tabela de destino para receber a informação se, após a execução do comando merge, o registro foi alterado, inserido ou simplesmente não foi afetado. 
+    
 - UseEnumStatusConfiguration [**opcional**]:
-  - teste
+  - Mesmo objetivo do parâmetro *UseStatusConfiguration*, porém utiliza como status em sua coluna de destino o enumerador fornecido pela bibliotea, tratando-o como tipo *int* no banco de dados.
+  - Enum BulkStatus
+ 
+        PROCESSADO = 0,
+        ALTERADO = 1,
+        INSERIDO = 2 
 
 - UseSnakeCaseNamingConvention [**opcional**]:
-  - teste
+  - Caso utilize em seu banco de dados alguma [convensão](https://github.com/efcore/EFCore.NamingConventions) específica, a biblioteca da suporte a:
+      - *UseSnakeCaseNamingConvention*
 
 ## Benchmarks
 
