@@ -5,8 +5,8 @@
 Quando precisamos processar uma quantidade significativa de dados em uma aplicação, por vezes executar de forma unitária cada registro pode não ser a melhor saída.
 <br><br>
 O projeto foi criado com o objetivo de contornar este problema, possibilitando uma forma de processamento mais eficaz utilizando comandos existentes no SqlServer e no .Net.
-- SqlServer MERGE. [[Documentação](https://learn.microsoft.com/pt-br/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver16)]
-- .Net SqlBulkCopy. [[Documentação](https://pages.github.com/](https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlbulkcopy?view=dotnet-plat-ext-7.0)https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlbulkcopy?view=dotnet-plat-ext-7.0)]
+- Sql MERGE. [[Documentação](https://learn.microsoft.com/pt-br/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver16)]
+- .Net SqlBulkCopy. [[Documentação](https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlbulkcopy?view=dotnet-plat-ext-7.0)]
 
 ## Estrutura do projeto
 
@@ -21,7 +21,52 @@ Possui o projeto que realiza benchmarks utilizando a abordagem proposta e implem
 
 ## Guia de uso
 
+Com a biblioteca referenciada em seu projeto, realize a injeção da mesma utilizando o método *ConfigureMergeBuilder*:
 
+    builder.Services.ConfigureMergeBuilder();
+
+Com o serviço injetado, já podemos configurar o builder para posteriormente executarmos a intrução no banco de dados. Exemplo abaixo utilizando uma classe de exemplo "Fornecedor":
+
+    var builder = await _mergeBuilder.Create<Fornecedor>()
+        .SetDataSource(dataSource)
+        .SetMergeColumns(x => x.Documento)
+        .SetUpdatedColumns(x => x)
+        .SetTransaction(transaction.GetDbTransaction())
+        .UseSnakeCaseNamingConvention()
+        .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
+        .SetIgnoreOnIsertOperation(x => x.Id)
+        .UseEnumStatusConfiguration(x => x.Status)
+        .Execute();
+
+Após configurar todos os parâmetros desejados, basta invocar o método *Execute*.
+
+## Parâmetros
+
+Pare configurar o builder, os possuímos os parâmetros:
+
+- SetDataSource [**obrigatório**]:
+  - teste
+
+- SetMergeColumns [**obrigatório**]:
+  - teste
+
+- SetUpdatedColumns [**obrigatório**]:
+  - teste
+
+- SetTransaction [**obrigatório**]:
+  - teste
+
+- WithCondition [**opcional**]:
+  - teste
+
+- SetIgnoreOnIsertOperation [**opcional**]:
+  - teste
+
+- UseEnumStatusConfiguration [**opcional**]:
+  - teste
+
+- UseSnakeCaseNamingConvention [**opcional**]:
+  - teste
 
 ## Benchmarks
 
