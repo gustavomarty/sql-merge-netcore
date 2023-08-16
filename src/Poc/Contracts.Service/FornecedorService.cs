@@ -32,10 +32,8 @@ namespace Contracts.Service
             await _context.AddAsync(fornecedor);
             await _context.SaveChangesAsync();
         }
-        public async Task InsertRange(List<FornecedorDto> fornecedorDto)
+        public async Task InsertRange(List<Fornecedor> fornecedores)
         {
-            var fornecedores = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
-
             await _context.AddRangeAsync(fornecedores);
             await _context.SaveChangesAsync();
         }
@@ -51,6 +49,11 @@ namespace Contracts.Service
 
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task Update(Fornecedor fornecedor)
+        {
+            _context.Entry(fornecedor).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
         }
         public async Task Upsert(List<FornecedorDto> fornecedorDto)
         {
@@ -74,6 +77,10 @@ namespace Contracts.Service
         public async Task<Fornecedor> Get(string documento)
         {
             return await _context.Set<Fornecedor>().FirstOrDefaultAsync(f => f.Documento.Equals(documento));
+        }
+        public async Task<List<Fornecedor>> GetMany(List<string> documentos)
+        {
+            return await _context.Set<Fornecedor>().Where(f => documentos.Contains(f.Documento)).ToListAsync();
         }
         public async Task<List<Fornecedor>> GetAll()
         {

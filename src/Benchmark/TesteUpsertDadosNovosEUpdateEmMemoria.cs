@@ -1,31 +1,34 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Contracts.Data.Data.Entities;
+using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-
 /// <summary>
 /// 1- Cria 1000 registros no banco
-/// 2- Modifica ~40% dos existentes (~400) e mantem ~60% (~600) inalterados
+/// 2- Cria 500 novos registros, modifica ~40% dos existentes (~200) e mantem ~60% (~300) inalterados
 /// 3- Valida se:
 ///     - o dados é novo? Insere
 ///     - o dado foi alterado? Atualiza
 ///     - o dado não foi alterado? Descarta
+/// 4- Faz busca única de todos os dados e atualiza em memória. Faz apenas 1 insert de todos
 /// 
 /// -->> Executa o comparativo de forma unitária e com Upsert
 /// </summary>
 [RPlotExporter]
 [SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
-public class TesteUpdateMetadeDadosEditados
+public class TesteUpsertDadosNovosEUpdateEmMemoria
 {
-    private ServiceProvider _serviceProvider;
-    private IFornecedorService _fornecedorService;
 
     //|          Method |       Mean |      Error |   StdDev |     Median |
     //|---------------- |-----------:|-----------:|---------:|-----------:|
-    //| ExecuteOneByOne | 4,371.5 ms | 2,710.0 ms | 703.8 ms | 4,487.3 ms |
-    //|   ExecuteUpsert |   512.2 ms | 2,610.2 ms | 677.9 ms |   214.0 ms |
+    //| ExecuteOneByOne | 2,562.7 ms | 2,324.2 ms | 603.6 ms | 2,546.8 ms |
+    //|   ExecuteUpsert |   545.6 ms | 2,569.2 ms | 667.2 ms |   254.1 ms |
+
+    private ServiceProvider _serviceProvider;
+    private IFornecedorService _fornecedorService;
 
     [GlobalSetup]
     public async Task Setup()
@@ -48,25 +51,30 @@ public class TesteUpdateMetadeDadosEditados
         await _fornecedorService.CleanTable();
         await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
 
-        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
-        
+        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true);
+
+        //Busca todos os que existem no banco de dados
+        var fornecedores = await _fornecedorService.GetMany(fornecedoresMix.Select(f => f.Documento).ToList());
+        var fornecedoresNovos = new List<Fornecedor>();
+
         foreach (var fornecedorDto in fornecedoresMix)
         {
-            //Validar existencia
-            var fornecedor = await _fornecedorService.Get(fornecedorDto.Documento);
+            var fornecedor = fornecedores.FirstOrDefault(f => f.Documento.Equals(fornecedorDto.Documento));
 
             //Se não existir, insert
             if (fornecedor == null)
             {
-                await _fornecedorService.Insert(new Contracts.Data.Data.Entities.Fornecedor(fornecedorDto.Nome, fornecedorDto.Documento, fornecedorDto.Cep));
-                Console.WriteLine("Dado Inserido");
+                fornecedoresNovos.Add(new Fornecedor(fornecedorDto.Nome, fornecedorDto.Documento, fornecedorDto.Cep));
                 continue;
             }
 
             //Se existir, valida se tem modificação e executa o updade
-            if(fornecedorDto.Nome != fornecedor.Nome || fornecedorDto.Cep != fornecedor.Cep)
+            if (fornecedorDto.Nome != fornecedor.Nome || fornecedorDto.Cep != fornecedor.Cep)
             {
-                await _fornecedorService.Update(fornecedorDto);
+                fornecedor.Nome = fornecedorDto.Nome;
+                fornecedor.Cep = fornecedorDto.Cep;
+                fornecedor.DataAlteracao = DateTime.Now;
+                await _fornecedorService.Update(fornecedor);
                 Console.WriteLine("Dado alterado");
                 continue;
             }
@@ -75,6 +83,11 @@ public class TesteUpdateMetadeDadosEditados
             Console.WriteLine("Dado descartado");
         }
 
+        if(fornecedoresNovos != null)
+        {
+            await _fornecedorService.InsertRange(fornecedoresNovos);
+            Console.WriteLine("Novos fornecedores inseridos");
+        }
         Console.WriteLine($"Fim Unitário -> {DateTime.Now}");
     }
 
@@ -87,7 +100,7 @@ public class TesteUpdateMetadeDadosEditados
         await _fornecedorService.CleanTable();
         await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
 
-        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
+        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true);
 
         //Roda upsert
         await _fornecedorService.Upsert(fornecedoresMix);

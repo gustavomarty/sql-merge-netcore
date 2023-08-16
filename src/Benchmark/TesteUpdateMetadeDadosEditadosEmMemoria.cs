@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,23 +10,24 @@ using Microsoft.Extensions.DependencyInjection;
 /// 1- Cria 1000 registros no banco
 /// 2- Modifica ~40% dos existentes (~400) e mantem ~60% (~600) inalterados
 /// 3- Valida se:
-///     - o dados é novo? Insere
+///     - o dados é novo? Insere (range, mantendo em memória)
 ///     - o dado foi alterado? Atualiza
 ///     - o dado não foi alterado? Descarta
+/// 4- Faz busca única de todos os dados e atualiza em memória
 /// 
 /// -->> Executa o comparativo de forma unitária e com Upsert
 /// </summary>
 [RPlotExporter]
-[SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
-public class TesteUpdateMetadeDadosEditados
+[SimpleJob(RunStrategy.ColdStart, iterationCount: 10)]
+public class TesteUpdateMetadeDadosEditadosEmMemoria
 {
     private ServiceProvider _serviceProvider;
     private IFornecedorService _fornecedorService;
 
     //|          Method |       Mean |      Error |   StdDev |     Median |
     //|---------------- |-----------:|-----------:|---------:|-----------:|
-    //| ExecuteOneByOne | 4,371.5 ms | 2,710.0 ms | 703.8 ms | 4,487.3 ms |
-    //|   ExecuteUpsert |   512.2 ms | 2,610.2 ms | 677.9 ms |   214.0 ms |
+    //| ExecuteOneByOne | 3,492.1 ms | 3,190.9 ms | 828.7 ms | 3,690.2 ms |
+    //|   ExecuteUpsert |   492.3 ms | 2,404.4 ms | 624.4 ms |   216.1 ms |
 
     [GlobalSetup]
     public async Task Setup()
@@ -49,11 +51,13 @@ public class TesteUpdateMetadeDadosEditados
         await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
 
         var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
-        
+
+        //Busca todos os que existem no banco de dados
+        var fornecedores = await _fornecedorService.GetMany(fornecedoresMix.Select(f => f.Documento).ToList());
+
         foreach (var fornecedorDto in fornecedoresMix)
         {
-            //Validar existencia
-            var fornecedor = await _fornecedorService.Get(fornecedorDto.Documento);
+            var fornecedor = fornecedores.FirstOrDefault(f => f.Documento.Equals(fornecedorDto.Documento));
 
             //Se não existir, insert
             if (fornecedor == null)
@@ -66,7 +70,10 @@ public class TesteUpdateMetadeDadosEditados
             //Se existir, valida se tem modificação e executa o updade
             if(fornecedorDto.Nome != fornecedor.Nome || fornecedorDto.Cep != fornecedor.Cep)
             {
-                await _fornecedorService.Update(fornecedorDto);
+                fornecedor.Nome = fornecedorDto.Nome;
+                fornecedor.Cep = fornecedorDto.Cep;
+                fornecedor.DataAlteracao = DateTime.Now;
+                await _fornecedorService.Update(fornecedor);
                 Console.WriteLine("Dado alterado");
                 continue;
             }

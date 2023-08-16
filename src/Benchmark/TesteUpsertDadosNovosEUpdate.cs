@@ -44,7 +44,6 @@ public class TesteUpsertDadosNovosEUpdate
     {
         Console.WriteLine($"Inicio Unitario -> {DateTime.Now}");
 
-        //Configura o banco com os 100 primeiros fornecedores
         await _fornecedorService.CleanTable();
         await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
 
