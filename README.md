@@ -133,3 +133,17 @@ Pare configurar o builder, os possuímos os parâmetros:
     //|---------------- |------------:|-----------:|-----------:|------------:|
     //| ExecuteOneByOne | 11,393.5 ms | 6,724.8 ms | 4,448.0 ms | 11,230.3 ms |
     //|   ExecuteUpsert |    498.7 ms |   931.6 ms |   616.2 ms |    299.2 ms |
+
+### Processamento de 1000 registros (500 registros novos, 200 updates e 300 descartados) (minimizando queries de busca no banco)
+
+    //|          Method |       Mean |      Error |   StdDev |     Median |
+    //|---------------- |-----------:|-----------:|---------:|-----------:|
+    //| ExecuteOneByOne | 3,492.1 ms | 3,190.9 ms | 828.7 ms | 3,690.2 ms |
+    //|   ExecuteUpsert |   492.3 ms | 2,404.4 ms | 624.4 ms |   216.1 ms |
+
+### Processamento de 1000 registros (500 registros novos, 200 updates e 300 descartados) (minimizando queries de busca no banco e insert unico no processamento sem bulk)
+    
+    |          Method |       Mean |      Error |     StdDev |     Median |
+    |---------------- |-----------:|-----------:|-----------:|-----------:|
+    | ExecuteOneByOne | 4,793.3 ms | 2,808.9 ms | 1,857.9 ms | 4,215.0 ms |
+    |   ExecuteUpsert |   508.5 ms | 1,032.9 ms |   683.2 ms |   278.3 ms |    
