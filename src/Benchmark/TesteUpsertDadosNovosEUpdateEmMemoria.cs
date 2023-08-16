@@ -18,14 +18,14 @@ using Microsoft.Extensions.DependencyInjection;
 /// -->> Executa o comparativo de forma unitária e com Upsert
 /// </summary>
 [RPlotExporter]
-[SimpleJob(RunStrategy.ColdStart, iterationCount: 5)]
+[SimpleJob(RunStrategy.ColdStart, iterationCount: 10)]
 public class TesteUpsertDadosNovosEUpdateEmMemoria
 {
 
-    //|          Method |       Mean |      Error |   StdDev |     Median |
-    //|---------------- |-----------:|-----------:|---------:|-----------:|
-    //| ExecuteOneByOne | 2,562.7 ms | 2,324.2 ms | 603.6 ms | 2,546.8 ms |
-    //|   ExecuteUpsert |   545.6 ms | 2,569.2 ms | 667.2 ms |   254.1 ms |
+    //|          Method |       Mean |      Error |     StdDev |     Median |
+    //|---------------- |-----------:|-----------:|-----------:|-----------:|
+    //| ExecuteOneByOne | 4,793.3 ms | 2,808.9 ms | 1,857.9 ms | 4,215.0 ms |
+    //|   ExecuteUpsert |   508.5 ms | 1,032.9 ms |   683.2 ms |   278.3 ms |
 
     private ServiceProvider _serviceProvider;
     private IFornecedorService _fornecedorService;
