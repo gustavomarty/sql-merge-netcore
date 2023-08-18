@@ -22,6 +22,13 @@ namespace SqlComplexOperations.Extensions
         private void Initialize()
         {
             var properties = typeof(T).GetProperties();
+
+            //@TODO
+            //select*
+            //from sys.columns
+            //where object_id = object_id('dbo.fornecedor')
+            //order by column_id
+
             properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
 
             _getPropValueFunc = new Func<T, object>[properties.Length];

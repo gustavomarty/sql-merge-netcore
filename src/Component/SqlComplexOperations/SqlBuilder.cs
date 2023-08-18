@@ -11,7 +11,7 @@ namespace SqlComplexOperations
         {
             if(!string.IsNullOrWhiteSpace(schema))
             {
-                return $@"Select Top 0 * into {schema}.#{tableName} from {schema}.{tableName}";
+                return $@"Select Top 0 * into [{schema}].#{tableName} from [{schema}].{tableName}";
             }
 
             return $@"Select Top 0 * into #{tableName} from {tableName}";
@@ -33,7 +33,7 @@ namespace SqlComplexOperations
         {
             var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema) 
                 ? new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from #{mergeBuilderSqlConfiguration.TableName}) as src on ") 
-                : new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.Schema}.{mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from {mergeBuilderSqlConfiguration.Schema}.#{mergeBuilderSqlConfiguration.TableName}) as src on ");
+                : new StringBuilder($"MERGE [{mergeBuilderSqlConfiguration.Schema}].{mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from [{mergeBuilderSqlConfiguration.Schema}].#{mergeBuilderSqlConfiguration.TableName}) as src on ");
             
             BuildMergedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.MergedColumns);
 
@@ -55,7 +55,7 @@ namespace SqlComplexOperations
         {
             if(!string.IsNullOrWhiteSpace(schema))
             {
-                return $@"drop table {schema}.#{tableName}";
+                return $@"drop table [{schema}].#{tableName}";
             }
 
             return $@"drop table #{tableName}";

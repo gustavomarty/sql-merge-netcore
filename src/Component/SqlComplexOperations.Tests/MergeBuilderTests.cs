@@ -12,11 +12,11 @@ namespace SqlComplexOperations.Tests
         private readonly string _pkQuery = "select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{0}'";
         private readonly string _pkQueryWithSchema = "select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{0}' and table_schema = '{1}'";
         private readonly string _createTempTableQuery = "Select Top 0 * into #{0} from {0}";
-        private readonly string _createTempTableQuerySchema = "Select Top 0 * into {1}.#{0} from {1}.{0}";
+        private readonly string _createTempTableQuerySchema = "Select Top 0 * into [{1}].#{0} from [{1}].{0}";
         private readonly string _dropTemTableQuery = "drop table #{0}";
-        private readonly string _dropTemTableQuerySchema = "drop table {1}.#{0}";
+        private readonly string _dropTemTableQuerySchema = "drop table [{1}].#{0}";
         private readonly string _mergeQuery = "MERGE {0} as tgt \n using (select * from #{0}) as src on {1}\n when matched {2} then \n update set {3}\n when not matched then \n insert values ({4}) \n output $action;";
-        private readonly string _mergeQuerySchema = "MERGE {1}.{0} as tgt \n using (select * from {1}.#{0}) as src on {2}\n when matched {3} then \n update set {4}\n when not matched then \n insert values ({5}) \n output $action;";
+        private readonly string _mergeQuerySchema = "MERGE [{1}].{0} as tgt \n using (select * from [{1}].#{0}) as src on {2}\n when matched {3} then \n update set {4}\n when not matched then \n insert values ({5}) \n output $action;";
 
         private readonly IDatabaseService _databaseService;
         private readonly IDbTransaction _dbTransaction;

@@ -12,7 +12,7 @@ namespace SqlComplexOperations.Services
         {
             DataTable table = new()
             {
-                TableName = string.IsNullOrWhiteSpace(schema) ? tableName : $"{schema}.{tableName}"
+                TableName = string.IsNullOrWhiteSpace(schema) ? tableName : $"[{schema}].{tableName}"
             };
 
             using var bulkInsert = new SqlBulkCopy(dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, dbTransaction as SqlTransaction);
