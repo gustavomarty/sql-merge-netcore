@@ -115,13 +115,14 @@ namespace SqlComplexOperations
         /// <para>[Opcional]</para>
         /// Caso queira usar uma coluna(ENUM BulkStatus) de status para executar o merge. (Default = FALSE).
         /// </summary>
+        /// <param name="useStringType">Quando o parametro for true ele salvara na coluna de status uma string quando for false ele salvara um int</param>
         /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/> e deve ser do tipo <see cref="BulkMergeStatus"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, BulkMergeStatus>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration(bool useStringType, Expression<Func<TEntity, BulkMergeStatus>> expression)
         {
-            UseEnumStatus = true;
+            UseEnumStatus = !useStringType;
 
             var member = (MemberExpression)expression.Body;
             StatusColumn = member.Member.Name;
@@ -133,13 +134,14 @@ namespace SqlComplexOperations
         /// <para>[Opcional]</para>
         /// Caso queira usar uma coluna(STRING) de status para executar o merge. (Default = FALSE).
         /// </summary>
+        /// <param name="useStringType">Quando o parametro for true ele salvara na coluna de status uma string quando for false ele salvara um int</param>
         /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, string>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration(bool useStringType, Expression<Func<TEntity, string>> expression)
         {
-            UseEnumStatus = true;
+            UseEnumStatus = !useStringType;
 
             var member = (MemberExpression)expression.Body;
             StatusColumn = member.Member.Name;
@@ -214,15 +216,11 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> WithCondition<TConditionType, TConditionOperator>(TConditionType conditionType, TConditionOperator conditionOperator, Expression<Func<TEntity, object>> expression)
-            where TConditionType : Enum
-            where TConditionOperator : Enum
+        public MergeBuilder<TEntity> WithCondition(ConditionType conditionType, ConditionOperator conditionOperator, Expression<Func<TEntity, object>> expression)
         {
-            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-            var cOperatorValue = (ConditionOperator)Enum.Parse(typeof(TConditionOperator), conditionOperator.ToString());
             var columns = GetColumns(expression);
 
-            var condition = new ConditionBuilder(columns ?? new List<string>(), cTypeValue, cOperatorValue);
+            var condition = new ConditionBuilder(columns ?? new List<string>(), conditionType, conditionOperator);
             Conditions.Add(condition);
 
             return this;
@@ -246,14 +244,13 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> WithCondition<TConditionType, TFieldType>(TConditionType conditionType, Expression<Func<TEntity, TFieldType>> expression)
-            where TConditionType : Enum
+        public MergeBuilder<TEntity> WithCondition<TFieldType>(ConditionType conditionType, Expression<Func<TEntity, TFieldType>> expression)
             where TFieldType : struct
         {
-            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-            var column = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+            var member = (MemberExpression)expression.Body;
+            var column = member.Member.Name;
 
-            var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
+            var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
 
             return this;
@@ -277,15 +274,12 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> WithCondition<TConditionType>(TConditionType conditionType, Expression<Func<TEntity, string>> expression)
-            where TConditionType : Enum
+        public MergeBuilder<TEntity> WithCondition(ConditionType conditionType, Expression<Func<TEntity, string>> expression)
         {
-            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-
             var member = (MemberExpression)expression.Body;
             var column = member.Member.Name;
 
-            var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
+            var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
 
             return this;
@@ -359,10 +353,9 @@ namespace SqlComplexOperations
             ValidateBuilderPreExecute();
 
             SetAllColumns();
-            SetPrimaryKeyColumn(DbTransaction!);
-
             CheckSnakeCaseOnExecuteCommand();
 
+            SetPrimaryKeyColumn(DbTransaction!);
             CreateTempTable(DbTransaction!);
             await PopulateTempTable(DbTransaction!);
             ExecuteMergeCommand(DbTransaction!);
@@ -375,19 +368,19 @@ namespace SqlComplexOperations
         private void ValidateBuilderPreExecute()
         {
             if(DbTransaction == null)
-                throw new ArgumentException("Transação não informada.");
+                throw new ArgumentException("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.");
 
             if(DbTransaction.Connection == null)
-                throw new ArgumentException("Transação não informada.");
+                throw new ArgumentException("The DbTransaction informed is without one active Connection.");
 
             if(!MergedColumns.Any())
-                throw new ArgumentException("Informe o parametro MergedColumns");
+                throw new ArgumentException("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.");
 
             if(!UpdatedColumns.Any())
-                throw new ArgumentException("Informe o parametro UpdatedColumns");
+                throw new ArgumentException("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.");
 
             if(!DataSource.Any())
-                throw new ArgumentException("Informe o parametro Datasource");
+                throw new ArgumentException("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.");
         }
 
         private void SetAllColumns()
