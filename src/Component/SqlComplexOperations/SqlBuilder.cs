@@ -29,28 +29,22 @@ namespace SqlComplexOperations
             return sql.ToString();
         }
 
-        internal static StringBuilder BuildMerge(
-            string tableName,
-            string schema,
-            List<string> mergedColumns, 
-            List<string> updatedColumns, 
-            List<string> insertedColumns,
-            List<ConditionBuilder> conditions,
-            string statusColumn,
-            bool useEnumStatus
-        )
+        internal static StringBuilder BuildMerge(MergeBuilderSqlConfiguration mergeBuilderSqlConfiguration)
         {
-            var stringBuilderQuery = string.IsNullOrWhiteSpace(schema) ? new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ") : new StringBuilder($"MERGE {schema}.{tableName} as tgt \n using (select * from {schema}.#{tableName}) as src on ");
-            BuildMergedColumns(stringBuilderQuery, mergedColumns);
+            var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema) 
+                ? new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from #{mergeBuilderSqlConfiguration.TableName}) as src on ") 
+                : new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.Schema}.{mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from {mergeBuilderSqlConfiguration.Schema}.#{mergeBuilderSqlConfiguration.TableName}) as src on ");
+            
+            BuildMergedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.MergedColumns);
 
             stringBuilderQuery.Append($"\n when matched");
-            BuildConditions(stringBuilderQuery, conditions);
+            BuildConditions(stringBuilderQuery, mergeBuilderSqlConfiguration.Conditions);
 
             stringBuilderQuery.Append($" then \n update set ");
-            BuildUpdatedColumns(stringBuilderQuery, updatedColumns, statusColumn, useEnumStatus);
+            BuildUpdatedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.UpdatedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
             stringBuilderQuery.Append($"\n when not matched then \n insert values (");
-            BuildInsertedColumns(stringBuilderQuery, insertedColumns, statusColumn, useEnumStatus);
+            BuildInsertedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.InsertedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
             BuildOutput(stringBuilderQuery);
 

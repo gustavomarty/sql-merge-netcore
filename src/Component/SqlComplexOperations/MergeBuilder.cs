@@ -425,7 +425,19 @@ namespace SqlComplexOperations
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
-            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, DbSchema, MergedColumns, RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns), RemoveIgnoredAndDuplicatedInsertColumns(AllColumns), Conditions, StatusColumn, UseEnumStatus);
+            var mergeBuilderSqlConfiguration = new MergeBuilderSqlConfiguration
+            {
+                TableName = _tableName,
+                Schema = DbSchema,
+                MergedColumns = MergedColumns,
+                UpdatedColumns = RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns),
+                InsertedColumns = RemoveIgnoredAndDuplicatedInsertColumns(AllColumns),
+                Conditions = Conditions,
+                StatusColumn = StatusColumn,
+                UseEnumStatus = UseEnumStatus
+            };
+
+            var stringBuilderQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
             
             _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
         }
