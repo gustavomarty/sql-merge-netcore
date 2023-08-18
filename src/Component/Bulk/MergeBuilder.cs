@@ -141,7 +141,9 @@ namespace Bulk
         {
             UseEnumStatus = true;
 
-            StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+            var member = (MemberExpression)expression.Body;
+            StatusColumn = member.Member.Name;
+
             return this;
         }
 
@@ -279,7 +281,9 @@ namespace Bulk
             where TConditionType : Enum
         {
             var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
-            var column = expression.Body.Type.GetProperties().Select(m => m.Name).First();
+
+            var member = (MemberExpression)expression.Body;
+            var column = member.Member.Name;
 
             var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
             Conditions.Add(condition);
