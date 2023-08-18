@@ -56,6 +56,7 @@ namespace SqlComplexOperations
         private string _tableName;
 
         private string StatusColumn { get; set; } = string.Empty;
+        private string DbSchema { get; set; } = string.Empty;
         private bool UseEnumStatus { get; set; } = false;
         private string PrimaryKey { get; set; } = string.Empty;
         private bool SnakeCaseNamingConvention { get; set; }
@@ -108,6 +109,20 @@ namespace SqlComplexOperations
         public MergeBuilder<TEntity> UseSnakeCaseNamingConvention()
         {
             SnakeCaseNamingConvention = true;
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
+        /// Define um database schema para rodar os comandos. (Default = FALSE).
+        /// </summary>
+        /// <remarks>
+        /// Exemplo:
+        /// select * from table_name -> select * from schema.table_name 
+        /// </remarks>
+        public MergeBuilder<TEntity> UseDatabaseSchema(string schema)
+        {
+            DbSchema = schema;
             return this;
         }
 
@@ -398,7 +413,7 @@ namespace SqlComplexOperations
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
         {
-            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName);
+            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema);
 
             var result = _databaseService.ExecuteScalarCommand(dbTransaction, query);
 
@@ -410,7 +425,7 @@ namespace SqlComplexOperations
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
-            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, MergedColumns, RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns), RemoveIgnoredAndDuplicatedInsertColumns(AllColumns), Conditions, StatusColumn, UseEnumStatus);
+            var stringBuilderQuery = SqlBuilder.BuildMerge(_tableName, DbSchema, MergedColumns, RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns), RemoveIgnoredAndDuplicatedInsertColumns(AllColumns), Conditions, StatusColumn, UseEnumStatus);
             
             _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
         }
@@ -458,19 +473,19 @@ namespace SqlComplexOperations
 
         private void CreateTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = SqlBuilder.BuildTempTable(_tableName);
+            var sqlCommand = SqlBuilder.BuildTempTable(_tableName, DbSchema);
 
             _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}");
+            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema);
         }
 
         private void DropTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = SqlBuilder.BuildDropTempTable(_tableName);
+            var sqlCommand = SqlBuilder.BuildDropTempTable(_tableName, DbSchema);
 
             _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }

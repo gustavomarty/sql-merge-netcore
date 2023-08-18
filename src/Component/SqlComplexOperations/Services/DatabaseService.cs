@@ -8,11 +8,11 @@ namespace SqlComplexOperations.Services
     [ExcludeFromCodeCoverage]
     public class DatabaseService : IDatabaseService
     {
-        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName)
+        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema)
         {
             DataTable table = new()
             {
-                TableName = tableName
+                TableName = string.IsNullOrWhiteSpace(schema) ? tableName : $"{schema}.{tableName}"
             };
 
             using var bulkInsert = new SqlBulkCopy(dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, dbTransaction as SqlTransaction);

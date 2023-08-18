@@ -7,18 +7,31 @@ namespace SqlComplexOperations
 {
     internal static class SqlBuilder
     {
-        internal static string BuildTempTable(string tableName)
+        internal static string BuildTempTable(string tableName, string schema)
         {
+            if(!string.IsNullOrWhiteSpace(schema))
+            {
+                return $@"Select Top 0 * into {schema}.#{tableName} from {schema}.{tableName}";
+            }
+
             return $@"Select Top 0 * into #{tableName} from {tableName}";
         }
 
-        internal static string BuildPrimaryKeyQuery(string tableName)
+        internal static string BuildPrimaryKeyQuery(string tableName, string schema)
         {
-            return @$"select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{tableName}'";
+            var sql = new StringBuilder($"select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{tableName}'");
+
+            if(!string.IsNullOrWhiteSpace(schema))
+            {
+                sql.Append($" and table_schema = '{schema}'");
+            }
+
+            return sql.ToString();
         }
 
         internal static StringBuilder BuildMerge(
-            string tableName, 
+            string tableName,
+            string schema,
             List<string> mergedColumns, 
             List<string> updatedColumns, 
             List<string> insertedColumns,
@@ -27,7 +40,7 @@ namespace SqlComplexOperations
             bool useEnumStatus
         )
         {
-            var stringBuilderQuery = new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ");
+            var stringBuilderQuery = string.IsNullOrWhiteSpace(schema) ? new StringBuilder($"MERGE {tableName} as tgt \n using (select * from #{tableName}) as src on ") : new StringBuilder($"MERGE {schema}.{tableName} as tgt \n using (select * from {schema}.#{tableName}) as src on ");
             BuildMergedColumns(stringBuilderQuery, mergedColumns);
 
             stringBuilderQuery.Append($"\n when matched");
@@ -44,8 +57,13 @@ namespace SqlComplexOperations
             return stringBuilderQuery;
         }
 
-        internal static string BuildDropTempTable(string tableName)
+        internal static string BuildDropTempTable(string tableName, string schema)
         {
+            if(!string.IsNullOrWhiteSpace(schema))
+            {
+                return $@"drop table {schema}.#{tableName}";
+            }
+
             return $@"drop table #{tableName}";
         }
 

@@ -10,9 +10,13 @@ namespace SqlComplexOperations.Tests
     public class MergeBuilderTests
     {
         private readonly string _pkQuery = "select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{0}'";
+        private readonly string _pkQueryWithSchema = "select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{0}' and table_schema = '{1}'";
         private readonly string _createTempTableQuery = "Select Top 0 * into #{0} from {0}";
+        private readonly string _createTempTableQuerySchema = "Select Top 0 * into {1}.#{0} from {1}.{0}";
         private readonly string _dropTemTableQuery = "drop table #{0}";
+        private readonly string _dropTemTableQuerySchema = "drop table {1}.#{0}";
         private readonly string _mergeQuery = "MERGE {0} as tgt \n using (select * from #{0}) as src on {1}\n when matched {2} then \n update set {3}\n when not matched then \n insert values ({4}) \n output $action;";
+        private readonly string _mergeQuerySchema = "MERGE {1}.{0} as tgt \n using (select * from {1}.#{0}) as src on {2}\n when matched {3} then \n update set {4}\n when not matched then \n insert values ({5}) \n output $action;";
 
         private readonly IDatabaseService _databaseService;
         private readonly IDbTransaction _dbTransaction;
@@ -27,7 +31,7 @@ namespace SqlComplexOperations.Tests
             _mergeBuilder = new MergeBuilder(_databaseService);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF)")]
         public async void Test_Ok()
         {
             //ARRANGE
@@ -70,7 +74,52 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE ON | STATUS OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA ON)")]
+        public async void Test_Ok_Schema()
+        {
+            //ARRANGE
+            var dataSource = PersonEntityMock.Get(10);
+            var pkQuery = string.Format(_pkQueryWithSchema, "PersonEntity", "dbo");
+            var createTempTableQuery = string.Format(_createTempTableQuerySchema, "PersonEntity", "dbo");
+            var dropTempTableQuery = string.Format(_dropTemTableQuerySchema, "PersonEntity", "dbo");
+
+            var mergeQuery = string.Format(_mergeQuerySchema,
+                "PersonEntity",
+                "dbo",
+                "tgt.Document = src.Document",
+                "AND (tgt.Name != src.Name or tgt.BirthDate != src.BirthDate)",
+                "tgt.Name = src.Name, tgt.Document = src.Document, tgt.BirthDate = src.BirthDate, tgt.UpdatedDate = src.UpdatedDate",
+                "src.Name, src.Document, src.BirthDate, src.UpdatedDate"
+            );
+
+            _databaseService.ExecuteScalarCommand(Arg.Any<IDbTransaction>(), Arg.Is(pkQuery))
+                .Returns("Id");
+
+            _dbTransaction.Connection
+                .Returns(Substitute.For<IDbConnection>());
+
+            var builder = _mergeBuilder.Create<PersonEntity>()
+                .UseDatabaseSchema("dbo")
+                .SetMergeColumns(x => x.Document)
+                .SetUpdatedColumns(x => x)
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetDataSource(dataSource)
+                .SetTransaction(_dbTransaction);
+
+            //ACTION
+            var result = await builder.Execute();
+
+            //ASSERT
+            Assert.True(result);
+
+            _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+        }
+
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE ON | STATUS OFF | SCHEMA OFF)")]
         public async void Test_Ok_SnakeCase()
         {
             //ARRANGE
@@ -114,7 +163,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT | SCHEMA OFF)")]
         public async void Test_Ok_StatusInt()
         {
             //ARRANGE
@@ -158,7 +207,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING | SCHEMA OFF)")]
         public async void Test_Ok_StatusString()
         {
             //ARRANGE
@@ -202,7 +251,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON) usando diferentes chamadas de metodos")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF) usando diferentes chamadas de metodos")]
         public async void Test_Ok_StatusString_DifMethods()
         {
             //ARRANGE
@@ -246,7 +295,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON) usando diferentes chamadas de metodos (Condition Struct)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF) usando diferentes chamadas de metodos (Condition Struct)")]
         public async void Test_Ok_StatusString_DifMethods_ConditionStruct()
         {
             //ARRANGE
