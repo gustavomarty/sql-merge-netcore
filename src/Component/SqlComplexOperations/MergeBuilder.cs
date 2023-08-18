@@ -1,11 +1,11 @@
 ﻿using System.Data;
-using Bulk.Models;
-using Bulk.Services;
-using Bulk.Extensions;
-using Bulk.Models.Enumerators;
+using SqlComplexOperations.Models;
+using SqlComplexOperations.Services;
+using SqlComplexOperations.Extensions;
+using SqlComplexOperations.Models.Enumerators;
 using System.Linq.Expressions;
 
-namespace Bulk
+namespace SqlComplexOperations
 {
     /// <summary>
     /// Classe para construir o comando SQL Merge.
@@ -115,11 +115,11 @@ namespace Bulk
         /// <para>[Opcional]</para>
         /// Caso queira usar uma coluna(ENUM BulkStatus) de status para executar o merge. (Default = FALSE).
         /// </summary>
-        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/> e deve ser do tipo <see cref="BulkStatus"/></param>
+        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/> e deve ser do tipo <see cref="BulkMergeStatus"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, BulkStatus>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, BulkMergeStatus>> expression)
         {
             UseEnumStatus = true;
 
@@ -208,7 +208,7 @@ namespace Bulk
         /// 
         /// WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.ColunaUm, x.ColunaDois })
         /// </remarks>
-        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionTypes"/></param>
+        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
         /// <param name="conditionOperator">Deve ser um enumerador do tipo <see cref="ConditionOperator"/></param>
         /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
         /// <returns>
@@ -218,7 +218,7 @@ namespace Bulk
             where TConditionType : Enum
             where TConditionOperator : Enum
         {
-            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
             var cOperatorValue = (ConditionOperator)Enum.Parse(typeof(TConditionOperator), conditionOperator.ToString());
             var columns = GetColumns(expression);
 
@@ -241,7 +241,7 @@ namespace Bulk
         /// 
         /// WithCondition(ConditionTypes.NOT_EQUAL, x => x.ColunaUm)
         /// </remarks>
-        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionTypes"/></param>
+        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
         /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
@@ -250,7 +250,7 @@ namespace Bulk
             where TConditionType : Enum
             where TFieldType : struct
         {
-            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
             var column = expression.Body.Type.GetProperties().Select(m => m.Name).First();
 
             var condition = new ConditionBuilder(new List<string> { column }, cTypeValue, ConditionOperator.NONE);
@@ -272,7 +272,7 @@ namespace Bulk
         /// 
         /// WithCondition(ConditionTypes.NOT_EQUAL, x => x.ColunaUm)
         /// </remarks>
-        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionTypes"/></param>
+        /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
         /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
@@ -280,7 +280,7 @@ namespace Bulk
         public MergeBuilder<TEntity> WithCondition<TConditionType>(TConditionType conditionType, Expression<Func<TEntity, string>> expression)
             where TConditionType : Enum
         {
-            var cTypeValue = (ConditionTypes)Enum.Parse(typeof(TConditionType), conditionType.ToString());
+            var cTypeValue = (ConditionType)Enum.Parse(typeof(TConditionType), conditionType.ToString());
 
             var member = (MemberExpression)expression.Body;
             var column = member.Member.Name;

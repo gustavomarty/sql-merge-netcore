@@ -1,17 +1,19 @@
 ﻿using System.Collections;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
-namespace Bulk.Extensions
+namespace SqlComplexOperations.Extensions
 {
-    public class ObjectDataReader<T> : DbDataReader
+    [ExcludeFromCodeCoverage]
+    internal class ObjectDataReader<T> : DbDataReader
     {
         private readonly IEnumerator<T> _enumerator;
         private readonly IDictionary<string, int> _propToOrdinalTable = new Dictionary<string, int>();
         private readonly IDictionary<int, string> _ordinalToPropTable = new Dictionary<int, string>();
         private Func<T, object>[] _getPropValueFunc;
 
-        public ObjectDataReader(IEnumerator<T> enumerator)
+        internal ObjectDataReader(IEnumerator<T> enumerator)
         {
             _enumerator = enumerator ?? throw new ArgumentNullException(nameof(enumerator));
             Initialize();

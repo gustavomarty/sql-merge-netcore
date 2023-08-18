@@ -1,6 +1,6 @@
-﻿using Bulk;
+﻿using SqlComplexOperations;
 using Bogus;
-using Bulk.Models.Enumerators;
+using SqlComplexOperations.Models.Enumerators;
 using Contracts.Data.Models.Dtos;
 using Contracts.Service.Extensions;
 using Contracts.Service.Interfaces;
@@ -58,7 +58,7 @@ namespace Contracts.Service
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => new { x.Numero })
                 .SetUpdatedColumns(x => x)
-                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Preco }) //Todos menos numero
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Descricao, x.Preco }) //Todos menos numero
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .Execute();
 

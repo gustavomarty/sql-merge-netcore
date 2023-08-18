@@ -1,4 +1,4 @@
-﻿using Bulk.Extensions;
+﻿using SqlComplexOperations.Extensions;
 using Contracts.Service;
 using BenchmarkDotNet.Running;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +15,7 @@ internal class Program
         using IHost host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((context, services) =>
             {
-                services.ConfigureMergeBuilder();
+                services.ConfigureSqlComplexOperations();
                 services.AddEntityFrameworkConfiguration(context.Configuration);
                 services.AddScoped<IClubeService, ClubeService>();
                 services.AddScoped<IFornecedorService, FornecedorService>();
@@ -140,7 +140,7 @@ internal class Program
 
     static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.ConfigureMergeBuilder();
+        services.ConfigureSqlComplexOperations();
         services.AddEntityFrameworkConfiguration(configuration);
         services.AddScoped<IClubeService, ClubeService>();
         services.AddScoped<IFornecedorService, FornecedorService>();

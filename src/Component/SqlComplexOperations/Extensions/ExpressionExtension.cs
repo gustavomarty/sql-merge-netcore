@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
-namespace Bulk.Extensions
+namespace SqlComplexOperations.Extensions
 {
     internal static class ExpressionExtension
     {

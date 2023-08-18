@@ -1,4 +1,4 @@
-﻿namespace Bulk.Tests.Models
+﻿namespace SqlComplexOperations.Tests.Models
 {
     public class PersonEntity
     {

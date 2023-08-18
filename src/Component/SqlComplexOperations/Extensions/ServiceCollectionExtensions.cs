@@ -1,11 +1,13 @@
-﻿using Bulk.Services;
+﻿using SqlComplexOperations.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 
-namespace Bulk.Extensions
+namespace SqlComplexOperations.Extensions
 {
+    [ExcludeFromCodeCoverage]
     public static class ServiceCollectionExtensions
     {
-        public static void ConfigureMergeBuilder(this IServiceCollection services)
+        public static void ConfigureSqlComplexOperations(this IServiceCollection services)
         {
             if(services is null)
                 throw new ArgumentException($"The service collection cannot be null", nameof(services));

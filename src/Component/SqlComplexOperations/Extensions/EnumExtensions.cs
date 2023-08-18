@@ -2,13 +2,13 @@
 using System.ComponentModel;
 using System.Collections.Concurrent;
 
-namespace Bulk.Extensions
+namespace SqlComplexOperations.Extensions
 {
-    public static class EnumExtensions
+    internal static class EnumExtensions
     {
         private static readonly ConcurrentDictionary<string, string> _displayNameCache = new ConcurrentDictionary<string, string>();
 
-        public static string DisplayName(this Enum value)
+        internal static string DisplayName(this Enum value)
         {
             var key = $"{value.GetType().FullName}.{value}";
 

@@ -1,10 +1,10 @@
 ﻿using System.Text;
 
-namespace Bulk.Extensions
+namespace SqlComplexOperations.Extensions
 {
-    public static class StringExtensions
+    internal static class StringExtensions
     {
-        public static string ToSnakeCase(this string text)
+        internal static string ToSnakeCase(this string text)
         {
             if(text == null)
             {

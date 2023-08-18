@@ -1,23 +1,23 @@
-﻿using Bulk.Extensions;
-using Bulk.Models;
-using Bulk.Models.Enumerators;
+﻿using SqlComplexOperations.Extensions;
+using SqlComplexOperations.Models;
+using SqlComplexOperations.Models.Enumerators;
 using System.Text;
 
-namespace Bulk
+namespace SqlComplexOperations
 {
     internal static class SqlBuilder
     {
-        public static string BuildTempTable(string tableName)
+        internal static string BuildTempTable(string tableName)
         {
             return $@"Select Top 0 * into #{tableName} from {tableName}";
         }
 
-        public static string BuildPrimaryKeyQuery(string tableName)
+        internal static string BuildPrimaryKeyQuery(string tableName)
         {
             return @$"select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{tableName}'";
         }
 
-        public static StringBuilder BuildMerge(
+        internal static StringBuilder BuildMerge(
             string tableName, 
             List<string> mergedColumns, 
             List<string> updatedColumns, 
@@ -44,7 +44,7 @@ namespace Bulk
             return stringBuilderQuery;
         }
 
-        public static string BuildDropTempTable(string tableName)
+        internal static string BuildDropTempTable(string tableName)
         {
             return $@"drop table #{tableName}";
         }
@@ -95,9 +95,9 @@ namespace Bulk
             if (!string.IsNullOrWhiteSpace(StatusColumn))
             {
                 if (useEnumStatus)
-                    stringBuilderQuery.Append($", tgt.{StatusColumn} = {(int)BulkStatus.ALTERADO}");
+                    stringBuilderQuery.Append($", tgt.{StatusColumn} = {(int)BulkMergeStatus.UPDATED}");
                 else
-                    stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkStatus.ALTERADO}'");
+                    stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkMergeStatus.UPDATED}'");
 
             }
         }
@@ -114,9 +114,9 @@ namespace Bulk
             if (!string.IsNullOrWhiteSpace(StatusColumn))
             {
                 if (useEnumStatus)
-                    stringBuilderQuery.Append($", {(int)BulkStatus.INSERIDO}");
+                    stringBuilderQuery.Append($", {(int)BulkMergeStatus.INSERTED}");
                 else
-                    stringBuilderQuery.Append($", '{BulkStatus.INSERIDO}'");
+                    stringBuilderQuery.Append($", '{BulkMergeStatus.INSERTED}'");
             }
         }   
         private static void BuildOutput(StringBuilder stringBuilderQuery)

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk", "Component\Bulk\Bulk.csproj", "{8744E6D4-D951-44E4-9DBB-D4187A485E13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlComplexOperations", "Component\SqlComplexOperations\SqlComplexOperations.csproj", "{8744E6D4-D951-44E4-9DBB-D4187A485E13}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Contracts.Api", "Poc\ContractsApi\Contracts.Api.csproj", "{F39DF18A-F7D6-42F9-ADAE-5115C4BA3A09}"
 EndProject
@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Component", "Component", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Poc", "Poc", "{BBE5B81D-12EE-4501-8B20-2CF86BE5C6C3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bulk.Tests", "Component\Bulk.Tests\Bulk.Tests.csproj", "{40EB30CC-753E-4C00-A5BD-6ACC6197C365}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlComplexOperations.Tests", "Component\SqlComplexOperations.Tests\SqlComplexOperations.Tests.csproj", "{40EB30CC-753E-4C00-A5BD-6ACC6197C365}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

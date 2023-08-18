@@ -1,4 +1,4 @@
-﻿namespace Bulk
+﻿namespace SqlComplexOperations
 {
     /// <summary>
     /// Interface para uso do merge builder

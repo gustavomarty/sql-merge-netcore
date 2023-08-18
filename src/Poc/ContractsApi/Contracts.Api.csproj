@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Component\Bulk\Bulk.csproj" />
+    <ProjectReference Include="..\..\Component\SqlComplexOperations\SqlComplexOperations.csproj" />
     <ProjectReference Include="..\Contracts.Data\Contracts.Data.csproj" />
     <ProjectReference Include="..\Contracts.Service\Contracts.Service.csproj" />
   </ItemGroup>

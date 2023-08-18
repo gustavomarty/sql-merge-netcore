@@ -1,7 +1,7 @@
-﻿using Bulk;
+﻿using SqlComplexOperations;
 using Bogus;
 using Bogus.Extensions.Brazil;
-using Bulk.Models.Enumerators;
+using SqlComplexOperations.Models.Enumerators;
 using Contracts.Service.Extensions;
 using Contracts.Data.Models.Dtos;
 using Contracts.Data.Data.Entities;
@@ -45,7 +45,7 @@ namespace Contracts.Service
                 fornecedor.DataAlteracao = DateTime.Now;
                 fornecedor.Nome = fornecedorDto.Nome;
                 fornecedor.Cep = fornecedorDto.Cep;
-                fornecedor.Status = BulkStatus.ALTERADO;
+                fornecedor.Status = BulkMergeStatus.UPDATED;
 
                 await _context.SaveChangesAsync();
             }
@@ -67,7 +67,7 @@ namespace Contracts.Service
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)
-                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .UseStatusConfiguration(x => x.Status)
                 .Execute();
@@ -89,7 +89,7 @@ namespace Contracts.Service
         public async Task<List<FornecedorDto>> GetNewFakes(int qtd)
         {
             var faker = new Faker<FornecedorDto>("pt_BR")
-                .RuleFor(x => x.Status, f => BulkStatus.INSERIDO)
+                .RuleFor(x => x.Status, f => BulkMergeStatus.INSERTED)
                 .RuleFor(x => x.Nome, f => f.Company.CompanyName())
                 .RuleFor(x => x.Documento, f => f.Company.Cnpj(false))
                 .RuleFor(x => x.Cep, f => f.Random.Number(10000000, 99999999).ToString());
@@ -132,7 +132,7 @@ namespace Contracts.Service
 
                 return new FornecedorDto
                 {
-                    Status = BulkStatus.INSERIDO,
+                    Status = BulkMergeStatus.INSERTED,
                     Nome = changeItems ? $"ALTERADO: {x.Nome}" : x.Nome,
                     Documento = x.Documento,
                     Cep = x.Cep

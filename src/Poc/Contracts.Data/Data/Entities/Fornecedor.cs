@@ -1,4 +1,4 @@
-﻿using Bulk.Models.Enumerators;
+﻿using SqlComplexOperations.Models.Enumerators;
 
 namespace Contracts.Data.Data.Entities
 {
@@ -14,7 +14,7 @@ namespace Contracts.Data.Data.Entities
             Nome = nome;
             Documento = documento;
             Cep = cep;
-            Status = BulkStatus.INSERIDO;
+            Status = BulkMergeStatus.INSERTED;
         } 
 
         public int Id { get; set; }
@@ -22,6 +22,6 @@ namespace Contracts.Data.Data.Entities
         public string Documento { get; set; }
         public string Cep { get; set; }
         public DateTime DataAlteracao { get; set; }
-        public BulkStatus Status { get; set; }
+        public BulkMergeStatus Status { get; set; }
     }
 }

@@ -1,11 +1,11 @@
-using Bulk.Models.Enumerators;
-using Bulk.Services;
-using Bulk.Tests.Models;
+using SqlComplexOperations.Models.Enumerators;
+using SqlComplexOperations.Services;
+using SqlComplexOperations.Tests.Models;
 using NSubstitute;
 using System.Data;
 using Xunit;
 
-namespace Bulk.Tests
+namespace SqlComplexOperations.Tests
 {
     public class MergeBuilderTests
     {
@@ -53,7 +53,7 @@ namespace Bulk.Tests
             var builder = _mergeBuilder.Create<PersonEntity>()
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
-                .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);

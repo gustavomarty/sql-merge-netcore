@@ -1,9 +1,11 @@
-﻿using Bulk.Extensions;
+﻿using SqlComplexOperations.Extensions;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 
-namespace Bulk.Services
+namespace SqlComplexOperations.Services
 {
+    [ExcludeFromCodeCoverage]
     public class DatabaseService : IDatabaseService
     {
         public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName)

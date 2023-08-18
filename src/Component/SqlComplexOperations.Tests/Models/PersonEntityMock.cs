@@ -1,7 +1,7 @@
 ﻿using Bogus;
 using Bogus.Extensions.Brazil;
 
-namespace Bulk.Tests.Models
+namespace SqlComplexOperations.Tests.Models
 {
     public static class PersonEntityMock
     {

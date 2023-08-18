@@ -1,7 +1,10 @@
 ﻿using System.ComponentModel;
 
-namespace Bulk.Models.Enumerators
+namespace SqlComplexOperations.Models.Enumerators
 {
+    /// <summary>
+    /// Operadores para a condition (&& ou ||)
+    /// </summary>
     public enum ConditionOperator
     {
         [Description("and")]

@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Component\Bulk\Bulk.csproj" />
+    <ProjectReference Include="..\..\Component\SqlComplexOperations\SqlComplexOperations.csproj" />
   </ItemGroup>
 
 </Project>
