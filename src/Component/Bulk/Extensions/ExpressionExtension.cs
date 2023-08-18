@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Bulk.Extensions
 {
-    internal class ExpressionExtension
+    internal static class ExpressionExtension
     {
         public static List<string> GetMemberNames<T>(params Expression<Func<T, object>>[] expressions)
         {

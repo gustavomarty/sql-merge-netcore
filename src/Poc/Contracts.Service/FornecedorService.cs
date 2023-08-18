@@ -69,7 +69,7 @@ namespace Contracts.Service
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionTypes.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnIsertOperation(x => x.Id)
-                .UseEnumStatusConfiguration(x => x.Status)
+                .UseStatusConfiguration(x => x.Status)
                 .Execute();
 
             transaction.Commit();

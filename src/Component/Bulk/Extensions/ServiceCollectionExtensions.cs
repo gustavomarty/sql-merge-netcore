@@ -8,7 +8,7 @@ namespace Bulk.Extensions
         public static void ConfigureMergeBuilder(this IServiceCollection services)
         {
             if(services is null)
-                throw new NullReferenceException(nameof(services));
+                throw new ArgumentException($"The service collection cannot be null", nameof(services));
 
             services.AddScoped<IDatabaseService, DatabaseService>();
             services.AddScoped<IMergeBuilder, MergeBuilder>();

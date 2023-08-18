@@ -113,25 +113,19 @@ namespace Bulk
 
         /// <summary>
         /// <para>[Opcional]</para>
-        /// Caso queira usar uma coluna(STRUCT) de status para executar o merge. (Default = FALSE).
+        /// Caso queira usar uma coluna(ENUM BulkStatus) de status para executar o merge. (Default = FALSE).
         /// </summary>
-        /// <typeparam name="ColumnType">O tipo de coluna que será utilizada como status</typeparam>
-        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/> e deve ser do tipo <see cref="BulkStatus"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> UseStatusConfiguration<ColumnType>(Expression<Func<TEntity, ColumnType>> expression)
-            where ColumnType : struct
-        {
-            StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
-            return this;
-        }
-
-        //TODO: Validar uso desse método e documentar
-        public MergeBuilder<TEntity> UseEnumStatusConfiguration(Expression<Func<TEntity, object>> expression)
+        public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, BulkStatus>> expression)
         {
             UseEnumStatus = true;
-            StatusColumn = GetColumns(expression).First();
+
+            var member = (MemberExpression)expression.Body;
+            StatusColumn = member.Member.Name;
+
             return this;
         }
 
@@ -145,6 +139,8 @@ namespace Bulk
         /// </returns>
         public MergeBuilder<TEntity> UseStatusConfiguration(Expression<Func<TEntity, string>> expression)
         {
+            UseEnumStatus = true;
+
             StatusColumn = expression.Body.Type.GetProperties().Select(m => m.Name).First();
             return this;
         }
@@ -375,19 +371,19 @@ namespace Bulk
         private void ValidateBuilderPreExecute()
         {
             if(DbTransaction == null)
-                throw new Exception("Transação não informada.");
+                throw new ArgumentException("Transação não informada.");
 
             if(DbTransaction.Connection == null)
-                throw new Exception("Transação não informada.");
+                throw new ArgumentException("Transação não informada.");
 
             if(!MergedColumns.Any())
-                throw new Exception("Informe o parametro MergedColumns");
+                throw new ArgumentException("Informe o parametro MergedColumns");
 
             if(!UpdatedColumns.Any())
-                throw new Exception("Informe o parametro UpdatedColumns");
+                throw new ArgumentException("Informe o parametro UpdatedColumns");
 
             if(!DataSource.Any())
-                throw new Exception("Informe o parametro Datasource");
+                throw new ArgumentException("Informe o parametro Datasource");
         }
 
         private void SetAllColumns()

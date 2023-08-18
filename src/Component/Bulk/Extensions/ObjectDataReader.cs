@@ -81,7 +81,7 @@ namespace Bulk.Extensions
             }
             catch (Exception e)
             {
-                throw new Exception($"Error in {typeof(T).Name}.GetValues, column index {index}, property {_ordinalToPropTable[index]}  ", e);
+                throw new InvalidOperationException($"Error in {typeof(T).Name}.GetValues, column index {index}, property {_ordinalToPropTable[index]}  ", e);
             }
         }
 
