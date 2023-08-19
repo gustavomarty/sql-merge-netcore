@@ -417,8 +417,7 @@ namespace SqlComplexOperations
             var result = _databaseService.ExecuteReaderCommand(dbTransaction, query);
 
             AllColumnsInDatabaseOrder = result;
-
-            AllColumns = (SnakeCaseNamingConvention) ? result.Select(x => x.ToPascalCase()).ToList() : result;
+            AllColumns = result;
         }
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
