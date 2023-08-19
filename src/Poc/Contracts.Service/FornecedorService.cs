@@ -62,7 +62,7 @@ namespace Contracts.Service
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             var builder = await _mergeBuilder.Create<Fornecedor>()
-                .UseDatabaseSchema("aaaaaaaa")
+                .UseDatabaseSchema("dbo")
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()
