@@ -367,10 +367,9 @@ namespace SqlComplexOperations
         public async Task<bool> Execute()
         {
             ValidateBuilderPreExecute();
-
-            SetAllColumnsInDatabaseOrder(DbTransaction!);
             CheckSnakeCaseOnExecuteCommand();
-
+            
+            SetAllColumnsInDatabaseOrder(DbTransaction!);
             SetPrimaryKeyColumn(DbTransaction!);
             CreateTempTable(DbTransaction!);
             await PopulateTempTable(DbTransaction!);

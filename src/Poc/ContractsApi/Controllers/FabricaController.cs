@@ -35,7 +35,7 @@ namespace Contracts.Api.Controllers
                 .UseStatusConfiguration(false, x => x.BulkMergeStatus)
                 .SetMergeColumns(x => x.Codigo)
                 .SetUpdatedColumns(x => new { x.Nome, x.Apelido, x.QuantidadeFuncionarios, x.UpdateAt })
-                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Nome, x.Apelido, x.QuantidadeFuncionarios, x.UpdateAt });
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Nome, x.Apelido, x.QuantidadeFuncionarios });
 
             var result = await mergeBuilder.Execute();
 
