@@ -8,7 +8,7 @@ namespace SqlComplexOperations.Services
     [ExcludeFromCodeCoverage]
     public class DatabaseService : IDatabaseService
     {
-        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema)
+        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase)
         {
             DataTable table = new()
             {
@@ -18,7 +18,7 @@ namespace SqlComplexOperations.Services
             using var bulkInsert = new SqlBulkCopy(dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, dbTransaction as SqlTransaction);
             bulkInsert.DestinationTableName = table.TableName;
 
-            using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator());
+            using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase);
             await bulkInsert.WriteToServerAsync(dataReader);
         }
 
@@ -32,6 +32,27 @@ namespace SqlComplexOperations.Services
             var obj = sqlCommand.ExecuteScalar();
 
             return obj;
+        }
+
+        public List<string> ExecuteReaderCommand(IDbTransaction dbTransaction, string command)
+        {
+            var ret = new List<string>();
+
+            var sqlCommand = dbTransaction!.Connection!.CreateCommand();
+
+            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.CommandText = command;
+
+            using(var rdr = sqlCommand.ExecuteReader())
+            {
+                while(rdr.Read())
+                {
+                    var myString = rdr.GetString(0);
+                    ret.Add(myString);
+                }
+            }
+
+            return ret;
         }
 
         public void ExecuteNonQueryCommand(IDbTransaction dbTransaction, string command)

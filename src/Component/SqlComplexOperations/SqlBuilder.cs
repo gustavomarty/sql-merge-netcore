@@ -29,7 +29,17 @@ namespace SqlComplexOperations
             return sql.ToString();
         }
 
-        internal static StringBuilder BuildMerge(MergeBuilderSqlConfiguration mergeBuilderSqlConfiguration)
+        internal static string BuildAllColumnsDbOrderQuery(string tableName, string schema)
+        {
+            if(!string.IsNullOrWhiteSpace(schema))
+            {
+                return $@"select name from sys.columns where object_id = object_id('{schema}.{tableName}') order by column_id";
+            }
+
+            return $@"select name from sys.columns where object_id = object_id('{tableName}') order by column_id";
+        }
+
+        internal static string BuildMerge(MergeBuilderSqlConfiguration mergeBuilderSqlConfiguration)
         {
             var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema) 
                 ? new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from #{mergeBuilderSqlConfiguration.TableName}) as src on ") 
@@ -48,7 +58,7 @@ namespace SqlComplexOperations
 
             BuildOutput(stringBuilderQuery);
 
-            return stringBuilderQuery;
+            return stringBuilderQuery.ToString();
         }
 
         internal static string BuildDropTempTable(string tableName, string schema)

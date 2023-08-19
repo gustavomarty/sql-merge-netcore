@@ -19,15 +19,19 @@ namespace SqlComplexOperations.Extensions
             Initialize();
         }
 
+        internal ObjectDataReader(IEnumerator<T> enumerator, List<string> columnOrder, bool isSnakeCase)
+        {
+            _enumerator = enumerator ?? throw new ArgumentNullException(nameof(enumerator));
+
+            if(isSnakeCase)
+                columnOrder = columnOrder.Select(x => x.ToPascalCase()).ToList();
+
+            Initialize(columnOrder);
+        }
+
         private void Initialize()
         {
             var properties = typeof(T).GetProperties();
-
-            //@TODO
-            //select*
-            //from sys.columns
-            //where object_id = object_id('dbo.fornecedor')
-            //order by column_id
 
             properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
 
@@ -35,6 +39,31 @@ namespace SqlComplexOperations.Extensions
 
             var ordinal = 0;
             foreach (var name in properties.Select(x => x.Name))
+            {
+                var propertyName = name;
+                _propToOrdinalTable.Add(propertyName, ordinal);
+                _ordinalToPropTable.Add(ordinal, propertyName);
+
+                var parameterExpression = Expression.Parameter(typeof(T), "name");
+                var func = (Func<T, object>)Expression.Lambda(
+                    Expression.Convert(
+                        Expression.Property(parameterExpression, propertyName),
+                        typeof(object)),
+                        parameterExpression)
+                    .Compile();
+
+                _getPropValueFunc[ordinal] = func;
+
+                ordinal++;
+            }
+        }
+
+        private void Initialize(List<string> columnOrder)
+        {
+            _getPropValueFunc = new Func<T, object>[columnOrder.Count];
+
+            var ordinal = 0;
+            foreach(var name in columnOrder)
             {
                 var propertyName = name;
                 _propToOrdinalTable.Add(propertyName, ordinal);
