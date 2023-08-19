@@ -43,7 +43,7 @@ namespace SqlComplexOperations
             stringBuilderQuery.Append($" then \n update set ");
             BuildUpdatedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.UpdatedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
-            stringBuilderQuery.Append($"\n when not matched then \n insert values (");
+            stringBuilderQuery.Append($"\n when not matched then \n insert ");
             BuildInsertedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.InsertedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
             BuildOutput(stringBuilderQuery);
@@ -115,6 +115,18 @@ namespace SqlComplexOperations
         }
         private static void BuildInsertedColumns(StringBuilder stringBuilderQuery, List<string> InsertedColumns, string StatusColumn, bool useEnumStatus)
         {
+            stringBuilderQuery.Append($" (");
+            for (int i = 0; i < InsertedColumns.Count; i++)
+            {
+                stringBuilderQuery.Append($"{InsertedColumns[i]}");
+
+                if (i != (InsertedColumns.Count - 1))
+                    stringBuilderQuery.Append(", ");
+            }
+            if (!string.IsNullOrWhiteSpace(StatusColumn))
+                stringBuilderQuery.Append($", {StatusColumn}");
+
+            stringBuilderQuery.Append($") values (");
             for (int i = 0; i < InsertedColumns.Count; i++)
             {
                 stringBuilderQuery.Append($"src.{InsertedColumns[i]}");
