@@ -68,6 +68,7 @@ namespace SqlComplexOperations
         private List<string> MergedColumns { get; set; } = new();
         private List<string> UpdatedColumns { get; set; } = new();
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
+        private List<string> AllColumnsInDatabaseOrder { get; set; } = new();
 
         private List<ConditionBuilder> Conditions { get; set; } = new();
 
@@ -366,10 +367,9 @@ namespace SqlComplexOperations
         public async Task<bool> Execute()
         {
             ValidateBuilderPreExecute();
-
-            SetAllColumns();
             CheckSnakeCaseOnExecuteCommand();
-
+            
+            SetAllColumnsInDatabaseOrder(DbTransaction!);
             SetPrimaryKeyColumn(DbTransaction!);
             CreateTempTable(DbTransaction!);
             await PopulateTempTable(DbTransaction!);
@@ -398,19 +398,6 @@ namespace SqlComplexOperations
                 throw new ArgumentException("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.");
         }
 
-        private void SetAllColumns()
-        {
-            var properties = typeof(TEntity).GetProperties();
-            properties = properties.Where(x => !x.GetGetMethod()?.IsVirtual ?? false).ToArray();
-
-            var names = properties.Select(x => x.Name);
-
-            if(SnakeCaseNamingConvention)
-                names = names.Select(x => x.ToSnakeCase());
-
-            AllColumns.AddRange(names);
-        }
-
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
         {
             var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema);
@@ -421,6 +408,15 @@ namespace SqlComplexOperations
 
             if(SnakeCaseNamingConvention)
                 PrimaryKey = PrimaryKey.ToSnakeCase();
+        }
+
+        private void SetAllColumnsInDatabaseOrder(IDbTransaction dbTransaction)
+        {
+            var query = SqlBuilder.BuildAllColumnsDbOrderQuery(_tableName, DbSchema);
+            var result = _databaseService.ExecuteReaderCommand(dbTransaction, query);
+
+            AllColumnsInDatabaseOrder = result;
+            AllColumns = result;
         }
 
         private void ExecuteMergeCommand(IDbTransaction dbTransaction)
@@ -437,9 +433,9 @@ namespace SqlComplexOperations
                 UseEnumStatus = UseEnumStatus
             };
 
-            var stringBuilderQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
+            var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
             
-            _databaseService.ExecuteNonQueryCommand(dbTransaction, stringBuilderQuery.ToString());
+            _databaseService.ExecuteNonQueryCommand(dbTransaction, stringQuery);
         }
 
         private List<string> RemoveIgnoredAndDuplicatedInsertColumns(List<string> listColumn)
@@ -492,7 +488,7 @@ namespace SqlComplexOperations
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema);
+            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention);
         }
 
         private void DropTempTable(IDbTransaction dbTransaction)
