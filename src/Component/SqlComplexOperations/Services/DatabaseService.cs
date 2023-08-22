@@ -1,11 +1,12 @@
 ﻿using Microsoft.Data.SqlClient;
-using Newtonsoft.Json;
 using SqlComplexOperations.Extensions;
 using SqlComplexOperations.Models.Enumerators;
 using SqlComplexOperations.Models.Output;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SqlComplexOperations.Services
 {
@@ -169,9 +170,11 @@ namespace SqlComplexOperations.Services
             var action = rdr.GetString(0);
             _ = Enum.TryParse(action, out OutputAction act);
 
-            var jsonSettings = new JsonSerializerSettings
+            var jsonSettings = new JsonSerializerOptions
             {
-                NullValueHandling = NullValueHandling.Ignore
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                PropertyNameCaseInsensitive = true,
+                UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement
             };
 
             T? srcObj = null;
@@ -184,13 +187,13 @@ namespace SqlComplexOperations.Services
                 for(int i = 0; i < dbColumns.Count; i++)
                 {
                     var attName = codeColumns[i];
-                    var attValue = rdr[$"src{dbColumns[i]}"];
+                    var attValue = rdr[$"src{dbColumns[i]}"] is DBNull ? null : rdr[$"src{dbColumns[i]}"];
 
                     src.TryAdd(attName, attValue);
                 }
 
-                var srcJson = JsonConvert.SerializeObject(src, jsonSettings);
-                srcObj = JsonConvert.DeserializeObject<T>(srcJson, jsonSettings);
+                var srcJson = JsonSerializer.Serialize(src, jsonSettings);
+                srcObj = JsonSerializer.Deserialize<T>(srcJson, jsonSettings);
             }
 
             if(act != OutputAction.INSERT)
@@ -200,13 +203,13 @@ namespace SqlComplexOperations.Services
                 for(int i = 0; i < dbColumns.Count; i++)
                 {
                     var attName = codeColumns[i];
-                    var attValue = rdr[$"tgt{dbColumns[i]}"];
+                    var attValue = rdr[$"tgt{dbColumns[i]}"] is DBNull ? null : rdr[$"tgt{dbColumns[i]}"];
 
                     tgt.TryAdd(attName, attValue);
                 }
 
-                var tgtJson = JsonConvert.SerializeObject(tgt, jsonSettings);
-                tgtObj = JsonConvert.DeserializeObject<T>(tgtJson, jsonSettings);
+                var tgtJson = JsonSerializer.Serialize(tgt, jsonSettings);
+                tgtObj = JsonSerializer.Deserialize<T>(tgtJson, jsonSettings);
             }
 
 

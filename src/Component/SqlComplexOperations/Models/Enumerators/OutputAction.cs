@@ -2,6 +2,9 @@
 
 namespace SqlComplexOperations.Models.Enumerators
 {
+    /// <summary>
+    /// Define qual a ação do resultado.
+    /// </summary>
     public enum OutputAction
     {
         [Description("UPDATE")]

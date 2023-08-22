@@ -1,5 +1,8 @@
 ﻿namespace SqlComplexOperations.Models.Enumerators
 {
+    /// <summary>
+    /// Define o tipo de resposta esperado depois da execução do bulk.
+    /// </summary>
     public enum ResponseType
     {
         /// <summary>
