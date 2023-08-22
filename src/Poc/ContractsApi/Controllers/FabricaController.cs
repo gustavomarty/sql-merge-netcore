@@ -30,6 +30,7 @@ namespace Contracts.Api.Controllers
             var mergeBuilder = _mergeBuilder.Create<Fabrica>()
                 .UseSnakeCaseNamingConvention()
                 .UseDatabaseSchema("test")
+                .SetResponseType(ResponseType.SIMPLE)
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseStatusConfiguration(false, x => x.BulkMergeStatus)
@@ -41,7 +42,7 @@ namespace Contracts.Api.Controllers
 
             await transaction.CommitAsync();
 
-            return NoContent();
+            return Ok(result);
         }
 
         private static Fabrica FabricaDtoToFabrica(FabricaDto fabricaDto)

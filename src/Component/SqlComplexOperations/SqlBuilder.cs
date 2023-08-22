@@ -56,7 +56,7 @@ namespace SqlComplexOperations
             stringBuilderQuery.Append($"\n when not matched then \n insert ");
             BuildInsertedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.InsertedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
-            BuildOutput(stringBuilderQuery);
+            BuildOutput(stringBuilderQuery, mergeBuilderSqlConfiguration.ResponseType, mergeBuilderSqlConfiguration.AllColumns);
 
             return stringBuilderQuery.ToString();
         }
@@ -152,10 +152,23 @@ namespace SqlComplexOperations
                 else
                     stringBuilderQuery.Append($", '{BulkMergeStatus.INSERTED}'");
             }
-        }   
-        private static void BuildOutput(StringBuilder stringBuilderQuery)
+        }
+
+        private static void BuildOutput(StringBuilder stringBuilderQuery, ResponseType responseType, List<string> updateColumns)
         {
-            stringBuilderQuery.Append($") \n output $action;");
+            stringBuilderQuery.Append($") \n output $action");
+
+            if(responseType == ResponseType.COMPLETE)
+            {
+                foreach(var column in updateColumns)
+                {
+                    stringBuilderQuery.Append($", inserted.{column} as src{column}");
+                    stringBuilderQuery.Append($", deleted.{column} as tgt{column}");
+                }
+
+            }
+
+            stringBuilderQuery.Append(';');
         }
     }
 }
