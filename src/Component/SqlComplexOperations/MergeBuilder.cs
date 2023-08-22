@@ -4,6 +4,7 @@ using SqlComplexOperations.Services;
 using SqlComplexOperations.Extensions;
 using SqlComplexOperations.Models.Enumerators;
 using System.Linq.Expressions;
+using SqlComplexOperations.Models.Output;
 
 namespace SqlComplexOperations
 {
@@ -70,7 +71,7 @@ namespace SqlComplexOperations
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
         private List<string> AllColumnsInDatabaseOrder { get; set; } = new();
 
-        private ResponseType ResponseType { get; set; } = ResponseType.SIMPLE;
+        private ResponseType ResponseTypeValue { get; set; } = ResponseType.ROW_COUNT;
 
         private List<ConditionBuilder> Conditions { get; set; } = new();
 
@@ -150,7 +151,7 @@ namespace SqlComplexOperations
 
         /// <summary>
         /// <para>[Opcional]</para>
-        /// Define o tipo de resposta na execução do bulk. (Default = SIMPLE).
+        /// Define o tipo de resposta na execução do bulk. (Default = ROW_COUNT).
         /// </summary>
         /// <param name="responseType">Tipo do response deve ser do enumerador <see cref="ResponseType"/>.</param>
         /// <returns>
@@ -158,7 +159,7 @@ namespace SqlComplexOperations
         /// </returns>
         public MergeBuilder<TEntity> SetResponseType(ResponseType responseType)
         {
-            ResponseType = responseType;
+            ResponseTypeValue = responseType;
             return this;
         }
 
@@ -448,13 +449,18 @@ namespace SqlComplexOperations
                 Conditions = Conditions,
                 StatusColumn = StatusColumn,
                 UseEnumStatus = UseEnumStatus,
-                ResponseType = ResponseType
+                ResponseType = ResponseTypeValue
             };
 
             var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
-            var result = (ResponseType == ResponseType.SIMPLE)
-                ? _databaseService.ExecuteMergeCommand(dbTransaction, stringQuery)
-                : _databaseService.ExecuteMergeCommand<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention);
+            
+            OutputModel result = ResponseTypeValue switch
+            {
+                ResponseType.NONE => _databaseService.ExecuteMergeCommand(dbTransaction, stringQuery),
+                ResponseType.SIMPLE => _databaseService.ExecuteMergeCommandSimple(dbTransaction, stringQuery),
+                ResponseType.COMPLETE => _databaseService.ExecuteMergeCommandComplete<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention),
+                _ => _databaseService.ExecuteMergeCommandRowCount(dbTransaction, stringQuery),
+            };
 
             return result;
         }

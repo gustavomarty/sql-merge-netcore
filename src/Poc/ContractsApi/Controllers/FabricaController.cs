@@ -30,7 +30,7 @@ namespace Contracts.Api.Controllers
             var mergeBuilder = _mergeBuilder.Create<Fabrica>()
                 .UseSnakeCaseNamingConvention()
                 .UseDatabaseSchema("test")
-                .SetResponseType(ResponseType.SIMPLE)
+                .SetResponseType(ResponseType.NONE)
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseStatusConfiguration(false, x => x.BulkMergeStatus)

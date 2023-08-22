@@ -4,7 +4,7 @@ using SqlComplexOperations.Tests.Models;
 using NSubstitute;
 using System.Data;
 using Xunit;
-using SqlComplexOperations.Models;
+using SqlComplexOperations.Models.Output;
 
 namespace SqlComplexOperations.Tests
 {
@@ -21,6 +21,7 @@ namespace SqlComplexOperations.Tests
         private readonly string _mergeQuery = "MERGE {0} as tgt \n using (select * from #{0}) as src on {1}\n when matched {2} then \n update set {3}\n when not matched then \n insert  ({4}) values ({5}) \n output $action;";
         private readonly string _mergeQuerySchema = "MERGE [{1}].{0} as tgt \n using (select * from [{1}].#{0}) as src on {2}\n when matched {3} then \n update set {4}\n when not matched then \n insert  ({5}) values ({6}) \n output $action;";
         private readonly string _mergeQueryCompleteResponse = "MERGE {0} as tgt \n using (select * from #{0}) as src on {1}\n when matched {2} then \n update set {3}\n when not matched then \n insert  ({4}) values ({5}) \n output $action{6};";
+        private readonly string _mergeQueryNoneResponse = "MERGE {0} as tgt \n using (select * from #{0}) as src on {1}\n when matched {2} then \n update set {3}\n when not matched then \n insert  ({4}) values ({5});";
 
         private readonly IDatabaseService _databaseService;
         private readonly IDbTransaction _dbTransaction;
@@ -35,7 +36,7 @@ namespace SqlComplexOperations.Tests
             _mergeBuilder = new MergeBuilder(_databaseService);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE)")]
         public async void Test_Ok()
         {
             //ARRANGE
@@ -67,8 +68,8 @@ namespace SqlComplexOperations.Tests
                     "UpdatedDate"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -81,6 +82,7 @@ namespace SqlComplexOperations.Tests
             var builder = _mergeBuilder.Create<PersonEntity>()
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
@@ -91,13 +93,14 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE COMPLETE)")]
@@ -137,15 +140,15 @@ namespace SqlComplexOperations.Tests
             _databaseService.ExecuteReaderCommand(Arg.Any<IDbTransaction>(), Arg.Is(buildAllColumnsDbOrderQuery))
                 .Returns(columns);
 
-            _databaseService.ExecuteMergeCommand<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false)
-                .Returns(new OutputModelWithData<PersonEntity>
+            _databaseService.ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false)
+                .Returns(new OutputModelComplete<PersonEntity>
                 {
                     Inserted = 1,
                     Deleted = 0,
                     Updated = 0,
-                    Data = new List<OutputData<PersonEntity>>
+                    Data = new List<OutputDataComplete<PersonEntity>>
                     {
-                        new OutputData<PersonEntity>
+                        new OutputDataComplete<PersonEntity>
                         {
                             Action = OutputAction.INSERT,
                             InsertedData = new PersonEntity
@@ -178,18 +181,152 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(1, result.Total);
-            Assert.IsType<OutputModelWithData<PersonEntity>>(result);
-            Assert.Equal(person.Id, ((OutputModelWithData<PersonEntity>)result).Data.First().InsertedData?.Id);
+            Assert.IsType<OutputModelComplete<PersonEntity>>(result);
+            Assert.Equal(1, ((OutputModelComplete<PersonEntity>)result).Total);
+            Assert.Equal(person.Id, ((OutputModelComplete<PersonEntity>)result).Data.First().InsertedData?.Id);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false);
+            _databaseService.Received(1).ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA ON)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE ROW_COUNT)")]
+        public async void Test_Ok_RowCountResult()
+        {
+            //ARRANGE
+            var dataSource = PersonEntityMock.Get(1);
+            var pkQuery = string.Format(_pkQuery, "PersonEntity");
+            var buildAllColumnsDbOrderQuery = string.Format(_buildAllColumnsDbOrderQuery, "PersonEntity");
+            var createTempTableQuery = string.Format(_createTempTableQuery, "PersonEntity");
+            var dropTempTableQuery = string.Format(_dropTemTableQuery, "PersonEntity");
+
+            var mergeQuery = string.Format(_mergeQuery,
+                "PersonEntity",
+                "tgt.Document = src.Document",
+                "AND (tgt.Name != src.Name or tgt.BirthDate != src.BirthDate)",
+                "tgt.Name = src.Name, tgt.Document = src.Document, tgt.BirthDate = src.BirthDate, tgt.UpdatedDate = src.UpdatedDate",
+                "Name, Document, BirthDate, UpdatedDate",
+                "src.Name, src.Document, src.BirthDate, src.UpdatedDate"
+            );
+
+            var columns = new List<string>
+            {
+                "Id",
+                "Name",
+                "Document",
+                "BirthDate",
+                "UpdatedDate"
+            };
+
+            var person = dataSource.First();
+
+            _databaseService.ExecuteScalarCommand(Arg.Any<IDbTransaction>(), Arg.Is(pkQuery))
+                .Returns("Id");
+
+            _databaseService.ExecuteReaderCommand(Arg.Any<IDbTransaction>(), Arg.Is(buildAllColumnsDbOrderQuery))
+                .Returns(columns);
+
+            _databaseService.ExecuteMergeCommandRowCount(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelRowCount
+                {
+                    RowsAffected = 1
+                });
+
+            _dbTransaction.Connection
+                .Returns(Substitute.For<IDbConnection>());
+
+            var builder = _mergeBuilder.Create<PersonEntity>()
+                .SetMergeColumns(x => x.Document)
+                .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.ROW_COUNT)
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetDataSource(dataSource)
+                .SetTransaction(_dbTransaction);
+
+            //ACTION
+            var result = await builder.Execute();
+
+            //ASSERT
+            Assert.NotNull(result);
+            Assert.IsType<OutputModelRowCount>(result);
+            Assert.Equal(1, ((OutputModelRowCount)result).RowsAffected);
+
+            _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
+            _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
+            _databaseService.Received(1).ExecuteMergeCommandRowCount(Arg.Any<IDbTransaction>(), mergeQuery);
+        }
+
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE NONE)")]
+        public async void Test_Ok_NoneResult()
+        {
+            //ARRANGE
+            var dataSource = PersonEntityMock.Get(1);
+            var pkQuery = string.Format(_pkQuery, "PersonEntity");
+            var buildAllColumnsDbOrderQuery = string.Format(_buildAllColumnsDbOrderQuery, "PersonEntity");
+            var createTempTableQuery = string.Format(_createTempTableQuery, "PersonEntity");
+            var dropTempTableQuery = string.Format(_dropTemTableQuery, "PersonEntity");
+
+            var mergeQuery = string.Format(_mergeQueryNoneResponse,
+                "PersonEntity",
+                "tgt.Document = src.Document",
+                "AND (tgt.Name != src.Name or tgt.BirthDate != src.BirthDate)",
+                "tgt.Name = src.Name, tgt.Document = src.Document, tgt.BirthDate = src.BirthDate, tgt.UpdatedDate = src.UpdatedDate",
+                "Name, Document, BirthDate, UpdatedDate",
+                "src.Name, src.Document, src.BirthDate, src.UpdatedDate"
+            );
+
+            var columns = new List<string>
+            {
+                "Id",
+                "Name",
+                "Document",
+                "BirthDate",
+                "UpdatedDate"
+            };
+
+            var person = dataSource.First();
+
+            _databaseService.ExecuteScalarCommand(Arg.Any<IDbTransaction>(), Arg.Is(pkQuery))
+                .Returns("Id");
+
+            _databaseService.ExecuteReaderCommand(Arg.Any<IDbTransaction>(), Arg.Is(buildAllColumnsDbOrderQuery))
+                .Returns(columns);
+
+            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModel());
+
+            _dbTransaction.Connection
+                .Returns(Substitute.For<IDbConnection>());
+
+            var builder = _mergeBuilder.Create<PersonEntity>()
+                .SetMergeColumns(x => x.Document)
+                .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.NONE)
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetDataSource(dataSource)
+                .SetTransaction(_dbTransaction);
+
+            //ACTION
+            var result = await builder.Execute();
+
+            //ASSERT
+            Assert.NotNull(result);
+            Assert.IsType<OutputModel>(result);
+
+            _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
+            _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
+            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+        }
+
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA ON | RESULT TYPE SIMPLE)")]
         public async void Test_Ok_Schema()
         {
             //ARRANGE
@@ -222,8 +359,8 @@ namespace SqlComplexOperations.Tests
                     "UpdatedDate"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -237,6 +374,7 @@ namespace SqlComplexOperations.Tests
                 .UseDatabaseSchema("dbo")
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
@@ -247,16 +385,17 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE ON | STATUS OFF | SCHEMA OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE ON | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE)")]
         public async void Test_Ok_SnakeCase()
         {
             //ARRANGE
@@ -288,8 +427,8 @@ namespace SqlComplexOperations.Tests
                     "updated_date"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -303,6 +442,7 @@ namespace SqlComplexOperations.Tests
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.EQUALS, ConditionOperator.AND, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
@@ -313,16 +453,17 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT | SCHEMA OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT | SCHEMA OFF | RESULT TYPE SIMPLE)")]
         public async void Test_Ok_StatusInt()
         {
             //ARRANGE
@@ -356,8 +497,8 @@ namespace SqlComplexOperations.Tests
                     "StatusStr"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -371,6 +512,7 @@ namespace SqlComplexOperations.Tests
                 .UseStatusConfiguration(false, x => x.Status)
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
@@ -381,16 +523,17 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING | SCHEMA OFF)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING | SCHEMA OFF | RESULT TYPE SIMPLE)")]
         public async void Test_Ok_StatusString()
         {
             //ARRANGE
@@ -424,8 +567,8 @@ namespace SqlComplexOperations.Tests
                     "StatusStr"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -439,6 +582,7 @@ namespace SqlComplexOperations.Tests
                 .UseStatusConfiguration(true, x => x.Status)
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
                 .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
@@ -449,16 +593,17 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF) usando diferentes chamadas de metodos")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF | RESULT TYPE SIMPLE) usando diferentes chamadas de metodos")]
         public async void Test_Ok_StatusString_DifMethods()
         {
             //ARRANGE
@@ -492,8 +637,8 @@ namespace SqlComplexOperations.Tests
                     "StatusStr"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -507,6 +652,7 @@ namespace SqlComplexOperations.Tests
                 .UseStatusConfiguration(true, x => x.StatusStr)
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, x => x.Name)
                 .SetIgnoreOnIsertOperation(x => new { x.Id, x.Status })
                 .SetDataSource(dataSource)
@@ -517,16 +663,17 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
-        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF) usando diferentes chamadas de metodos (Condition Struct)")]
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF | RESULT TYPE SIMPLE) usando diferentes chamadas de metodos (Condition Struct)")]
         public async void Test_Ok_StatusString_DifMethods_ConditionStruct()
         {
             //ARRANGE
@@ -560,8 +707,8 @@ namespace SqlComplexOperations.Tests
                     "StatusStr"
                 });
 
-            _databaseService.ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery)
-                .Returns(new OutputModel
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
                 {
                     Inserted = 10,
                     Deleted = 0,
@@ -575,6 +722,7 @@ namespace SqlComplexOperations.Tests
                 .UseStatusConfiguration(true, x => x.StatusStr)
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
+                .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, x => x.BirthDate)
                 .SetIgnoreOnIsertOperation(x => new { x.Id, x.Status })
                 .SetDataSource(dataSource)
@@ -585,13 +733,14 @@ namespace SqlComplexOperations.Tests
 
             //ASSERT
             Assert.NotNull(result);
-            Assert.Equal(10, result.Total);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
 
             _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommand(Arg.Any<IDbTransaction>(), mergeQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
         [Fact(DisplayName = "Teste cenario com erro (DbTransaction == null)")]

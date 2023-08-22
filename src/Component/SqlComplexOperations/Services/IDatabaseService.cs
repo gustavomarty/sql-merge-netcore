@@ -1,4 +1,4 @@
-﻿using SqlComplexOperations.Models;
+﻿using SqlComplexOperations.Models.Output;
 using System.Data;
 
 namespace SqlComplexOperations.Services
@@ -7,7 +7,9 @@ namespace SqlComplexOperations.Services
     {
         public Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase);
         OutputModel ExecuteMergeCommand(IDbTransaction dbTransaction, string command);
-        OutputModelWithData<T> ExecuteMergeCommand<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase) where T : class;
+        OutputModelRowCount ExecuteMergeCommandRowCount(IDbTransaction dbTransaction, string command);
+        OutputModelSimple ExecuteMergeCommandSimple(IDbTransaction dbTransaction, string command);
+        OutputModelComplete<T> ExecuteMergeCommandComplete<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase) where T : class;
         public object? ExecuteScalarCommand(IDbTransaction dbTransaction, string command);
         List<string> ExecuteReaderCommand(IDbTransaction dbTransaction, string command);
         public void ExecuteNonQueryCommand(IDbTransaction dbTransaction, string command);

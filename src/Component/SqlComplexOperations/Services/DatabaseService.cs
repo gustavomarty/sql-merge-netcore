@@ -1,12 +1,11 @@
 ﻿using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using SqlComplexOperations.Extensions;
-using SqlComplexOperations.Models;
 using SqlComplexOperations.Models.Enumerators;
+using SqlComplexOperations.Models.Output;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
-using System.Net.Http.Json;
 
 namespace SqlComplexOperations.Services
 {
@@ -29,6 +28,18 @@ namespace SqlComplexOperations.Services
 
         public OutputModel ExecuteMergeCommand(IDbTransaction dbTransaction, string command)
         {
+            var sqlCommand = dbTransaction!.Connection!.CreateCommand();
+
+            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.CommandText = command;
+
+            sqlCommand.ExecuteNonQuery();
+
+            return new();
+        }
+
+        public OutputModelRowCount ExecuteMergeCommandRowCount(IDbTransaction dbTransaction, string command)
+        {
             var actions = new List<string>();
 
             var sqlCommand = dbTransaction!.Connection!.CreateCommand();
@@ -45,7 +56,31 @@ namespace SqlComplexOperations.Services
                 }
             }
 
-            return new OutputModel
+            return new OutputModelRowCount
+            {
+                RowsAffected = actions.Count
+            };
+        }
+
+        public OutputModelSimple ExecuteMergeCommandSimple(IDbTransaction dbTransaction, string command)
+        {
+            var actions = new List<string>();
+
+            var sqlCommand = dbTransaction!.Connection!.CreateCommand();
+
+            sqlCommand.Transaction = dbTransaction;
+            sqlCommand.CommandText = command;
+
+            using(var rdr = sqlCommand.ExecuteReader())
+            {
+                while(rdr.Read())
+                {
+                    var myString = rdr.GetString(0);
+                    actions.Add(myString);
+                }
+            }
+
+            return new OutputModelSimple
             {
                 Inserted = actions.Count(x => x.Equals(OutputAction.INSERT.DisplayName())),
                 Updated = actions.Count(x => x.Equals(OutputAction.UPDATE.DisplayName())),
@@ -53,10 +88,10 @@ namespace SqlComplexOperations.Services
             };
         }
 
-        public OutputModelWithData<T> ExecuteMergeCommand<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase)
+        public OutputModelComplete<T> ExecuteMergeCommandComplete<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase)
             where T : class
         {
-            var dataList = new List<OutputData<T>>();
+            var dataList = new List<OutputDataComplete<T>>();
 
             var sqlCommand = dbTransaction!.Connection!.CreateCommand();
 
@@ -76,7 +111,7 @@ namespace SqlComplexOperations.Services
                 }
             }
 
-            return new OutputModelWithData<T>
+            return new OutputModelComplete<T>
             {
                 Inserted = dataList.Count(x => x.Action == OutputAction.INSERT),
                 Updated = dataList.Count(x => x.Action == OutputAction.UPDATE),
@@ -128,7 +163,7 @@ namespace SqlComplexOperations.Services
             sqlCommand.ExecuteNonQuery();
         }
 
-        private static OutputData<T> GenerateOutputData<T>(IDataReader rdr, List<string> dbColumns, List<string> codeColumns)
+        private static OutputDataComplete<T> GenerateOutputData<T>(IDataReader rdr, List<string> dbColumns, List<string> codeColumns)
             where T : class
         {
             var action = rdr.GetString(0);
@@ -175,7 +210,7 @@ namespace SqlComplexOperations.Services
             }
 
 
-            var data = new OutputData<T>
+            var data = new OutputDataComplete<T>
             {
                 Action = act,
                 InsertedData = srcObj,

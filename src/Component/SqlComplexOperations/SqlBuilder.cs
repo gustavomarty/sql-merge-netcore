@@ -156,10 +156,16 @@ namespace SqlComplexOperations
 
         private static void BuildOutput(StringBuilder stringBuilderQuery, ResponseType responseType, List<string> updateColumns)
         {
-            stringBuilderQuery.Append($") \n output $action");
+            stringBuilderQuery.Append(')');
 
-            if(responseType == ResponseType.COMPLETE)
+            if(responseType == ResponseType.SIMPLE || responseType == ResponseType.ROW_COUNT)
             {
+                stringBuilderQuery.Append($" \n output $action");
+            }
+            else if(responseType == ResponseType.COMPLETE)
+            {
+                stringBuilderQuery.Append($" \n output $action");
+
                 foreach(var column in updateColumns)
                 {
                     stringBuilderQuery.Append($", inserted.{column} as src{column}");

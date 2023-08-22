@@ -1,14 +1,14 @@
 ﻿using SqlComplexOperations.Models.Enumerators;
 
-namespace SqlComplexOperations.Models
+namespace SqlComplexOperations.Models.Output
 {
-    public class OutputModelWithData<T> : OutputModel
+    public class OutputModelComplete<T> : OutputModelSimple
         where T : class
     {
-        public List<OutputData<T>> Data { get; set; } = new();
+        public List<OutputDataComplete<T>> Data { get; set; } = new();
     }
 
-    public class OutputData<T>
+    public class OutputDataComplete<T>
         where T : class
     {
         public OutputAction Action { get; set; }
