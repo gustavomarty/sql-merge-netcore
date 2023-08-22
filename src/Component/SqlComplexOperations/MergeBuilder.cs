@@ -70,6 +70,8 @@ namespace SqlComplexOperations
         private List<string> IgnoredOnInsertOperation { get; set; } = new();
         private List<string> AllColumnsInDatabaseOrder { get; set; } = new();
 
+        private ResponseType ResponseType { get; set; } = ResponseType.SIMPLE;
+
         private List<ConditionBuilder> Conditions { get; set; } = new();
 
         /// <summary>
@@ -143,6 +145,20 @@ namespace SqlComplexOperations
             var member = (MemberExpression)expression.Body;
             StatusColumn = member.Member.Name;
 
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
+        /// Define o tipo de resposta na execução do bulk. (Default = SIMPLE).
+        /// </summary>
+        /// <param name="responseType">Tipo do response deve ser do enumerador <see cref="ResponseType"/>.</param>
+        /// <returns>
+        /// Retorna o MergeBuilder atual.
+        /// </returns>
+        public MergeBuilder<TEntity> SetResponseType(ResponseType responseType)
+        {
+            ResponseType = responseType;
             return this;
         }
 
@@ -364,7 +380,7 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o resultado do merge.
         /// </returns>
-        public async Task<bool> Execute()
+        public async Task<OutputModel> Execute()
         {
             ValidateBuilderPreExecute();
             CheckSnakeCaseOnExecuteCommand();
@@ -373,11 +389,11 @@ namespace SqlComplexOperations
             SetPrimaryKeyColumn(DbTransaction!);
             CreateTempTable(DbTransaction!);
             await PopulateTempTable(DbTransaction!);
-            ExecuteMergeCommand(DbTransaction!);
+            var result = ExecuteMergeCommand(DbTransaction!);
 
             DropTempTable(DbTransaction!);
 
-            return true;
+            return result;
         }
 
         private void ValidateBuilderPreExecute()
@@ -419,23 +435,28 @@ namespace SqlComplexOperations
             AllColumns = result;
         }
 
-        private void ExecuteMergeCommand(IDbTransaction dbTransaction)
+        private OutputModel ExecuteMergeCommand(IDbTransaction dbTransaction)
         {
             var mergeBuilderSqlConfiguration = new MergeBuilderSqlConfiguration
             {
                 TableName = _tableName,
                 Schema = DbSchema,
+                AllColumns = AllColumns,
                 MergedColumns = MergedColumns,
                 UpdatedColumns = RemoveIgnoredAndDuplicatedUpdateColumns(UpdatedColumns),
                 InsertedColumns = RemoveIgnoredAndDuplicatedInsertColumns(AllColumns),
                 Conditions = Conditions,
                 StatusColumn = StatusColumn,
-                UseEnumStatus = UseEnumStatus
+                UseEnumStatus = UseEnumStatus,
+                ResponseType = ResponseType
             };
 
             var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
-            
-            _databaseService.ExecuteNonQueryCommand(dbTransaction, stringQuery);
+            var result = (ResponseType == ResponseType.SIMPLE)
+                ? _databaseService.ExecuteMergeCommand(dbTransaction, stringQuery)
+                : _databaseService.ExecuteMergeCommand<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention);
+
+            return result;
         }
 
         private List<string> RemoveIgnoredAndDuplicatedInsertColumns(List<string> listColumn)
