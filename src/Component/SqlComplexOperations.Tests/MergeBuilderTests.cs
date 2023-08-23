@@ -104,6 +104,74 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
 
+        [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE) Usando annotation de property name")]
+        public async void Test_Ok_WithPropertyNameAnnotation()
+        {
+            //ARRANGE
+            var dataSource = PersonEntityMock.GetWithPropName(10);
+            var pkQuery = string.Format(_pkQuery, "PersonEntity");
+            var buildAllColumnsDbOrderQuery = string.Format(_buildAllColumnsDbOrderQuery, "PersonEntity");
+            var createTempTableQuery = string.Format(_createTempTableQuery, "PersonEntity");
+            var dropTempTableQuery = string.Format(_dropTemTableQuery, "PersonEntity");
+
+            var mergeQuery = string.Format(_mergeQuery,
+                "PersonEntity",
+                "tgt.cpf = src.cpf",
+                "AND (tgt.nome != src.nome or tgt.dta_aniversario != src.dta_aniversario)",
+                "tgt.nome = src.nome, tgt.cpf = src.cpf, tgt.dta_aniversario = src.dta_aniversario, tgt.dta_atualizacao = src.dta_atualizacao",
+                "nome, cpf, dta_aniversario, dta_atualizacao",
+                "src.nome, src.cpf, src.dta_aniversario, src.dta_atualizacao"
+            );
+
+            _databaseService.ExecuteScalarCommand(Arg.Any<IDbTransaction>(), Arg.Is(pkQuery))
+                .Returns("id");
+
+            _databaseService.ExecuteReaderCommand(Arg.Any<IDbTransaction>(), Arg.Is(buildAllColumnsDbOrderQuery))
+                .Returns(new List<string>
+                {
+                    "id",
+                    "nome",
+                    "cpf",
+                    "dta_aniversario",
+                    "dta_atualizacao"
+                });
+
+            _databaseService.ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery)
+                .Returns(new OutputModelSimple
+                {
+                    Inserted = 10,
+                    Deleted = 0,
+                    Updated = 0
+                });
+
+            _dbTransaction.Connection
+                .Returns(Substitute.For<IDbConnection>());
+
+            var builder = _mergeBuilder.Create<PersonEntityPropName>("PersonEntity")
+                .UsePropertyNameAttribute()
+                .SetMergeColumns(x => x.Document)
+                .SetUpdatedColumns(x => x)
+                .SetResponseType(ResponseType.SIMPLE)
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetDataSource(dataSource)
+                .SetTransaction(_dbTransaction);
+
+            //ACTION
+            var result = await builder.Execute();
+
+            //ASSERT
+            Assert.NotNull(result);
+            Assert.IsType<OutputModelSimple>(result);
+            Assert.Equal(10, ((OutputModelSimple)result).Total);
+
+            _databaseService.Received(1).ExecuteReaderCommand(Arg.Any<IDbTransaction>(), buildAllColumnsDbOrderQuery);
+            _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
+            _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
+            _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
+        }
+
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE COMPLETE)")]
         public async void Test_Ok_CompleteResult()
         {
@@ -880,5 +948,33 @@ namespace SqlComplexOperations.Tests
             Assert.Equal("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", result.Message);
         }
 
+        [Fact(DisplayName = "Teste cenario com erro (Invalid attribute configuration)")]
+        public async void Test_Error_InvalidPropNameAttribute()
+        {
+            //ARRANGE
+            var dataSource = PersonEntityMock.Get(10);
+            var pkQuery = string.Format(_pkQuery, "PersonEntity");
+
+            _databaseService.ExecuteScalarCommand(Arg.Any<IDbTransaction>(), Arg.Is(pkQuery))
+                .Returns("Id");
+
+            _dbTransaction.Connection
+                .Returns(Substitute.For<IDbConnection>());
+
+            var builder = _mergeBuilder.Create<PersonEntity>()
+                .SetMergeColumns(x => x.Document)
+                .SetUpdatedColumns(x => x)
+                .SetDataSource(dataSource)
+                .UsePropertyNameAttribute()
+                .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
+                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetTransaction(_dbTransaction);
+
+            //ACTION
+            var result = await Assert.ThrowsAsync<InvalidPropertyNameConfigurationException<PersonEntity>>(() => builder.Execute());
+
+            //ASSERT
+            Assert.Equal("You are using the 'UsePropertyNameAttribute' configuration, all attributes of your entity needs be mapped.", result.Message);
+        }
     }
 }

@@ -16,6 +16,11 @@ namespace SqlComplexOperations.Tests.Models
             return GetWithStatus(1).First();
         }
 
+        public static PersonEntityPropName GetWithPropName()
+        {
+            return GetWithPropName(1).First();
+        }
+
         public static List<PersonEntity> Get(int quantity)
         {
             var faker = new Faker<PersonEntity>("pt_BR")
@@ -38,6 +43,18 @@ namespace SqlComplexOperations.Tests.Models
                 .RuleFor(x => x.UpdatedDate, DateTime.Now)
                 .RuleFor(x => x.Status, BulkMergeStatus.PROCESSED)
                 .RuleFor(x => x.StatusStr, "PROCESSED");
+
+            return faker.Generate(quantity);
+        }
+
+        public static List<PersonEntityPropName> GetWithPropName(int quantity)
+        {
+            var faker = new Faker<PersonEntityPropName>("pt_BR")
+                .RuleFor(x => x.Id, f => f.IndexGlobal)
+                .RuleFor(x => x.Name, f => f.Person.FullName)
+                .RuleFor(x => x.BirthDate, f => f.Person.DateOfBirth)
+                .RuleFor(x => x.Document, f => f.Person.Cpf(false))
+                .RuleFor(x => x.UpdatedDate, DateTime.Now);
 
             return faker.Generate(quantity);
         }
