@@ -1,6 +1,7 @@
 using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using SqlComplexOperations.Models.Enumerators;
 
 namespace Contracts.Api.Controllers
 {
@@ -69,7 +70,7 @@ namespace Contracts.Api.Controllers
         [HttpPost("contracts/suppliers")]
         public async Task<IActionResult> PostSuppliers([FromBody] List<FornecedorDto> fornecedoresDto)
         {
-            await _fornecedorService.Upsert(fornecedoresDto);
+            await _fornecedorService.Upsert(fornecedoresDto, ResponseType.ROW_COUNT);
             return NoContent();
         }
 

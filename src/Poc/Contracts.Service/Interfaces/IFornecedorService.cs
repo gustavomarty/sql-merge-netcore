@@ -1,5 +1,6 @@
 ﻿using Contracts.Data.Data.Entities;
 using Contracts.Data.Models.Dtos;
+using SqlComplexOperations.Models.Enumerators;
 
 namespace Contracts.Service.Interfaces
 {
@@ -10,7 +11,7 @@ namespace Contracts.Service.Interfaces
         Task InsertRange(List<Fornecedor> fornecedores);
         Task Update(FornecedorDto fornecedorDto);
         Task Update(Fornecedor fornecedor);
-        Task Upsert(List<FornecedorDto> fornecedorDto);
+        Task Upsert(List<FornecedorDto> fornecedorDto, ResponseType responseType);
         Task<Fornecedor> Get(string documento);
         Task<List<Fornecedor>> GetMany(List<string> documentos);
         Task<List<Fornecedor>> GetAll();

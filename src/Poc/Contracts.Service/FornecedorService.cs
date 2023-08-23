@@ -55,7 +55,7 @@ namespace Contracts.Service
             _context.Entry(fornecedor).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
-        public async Task Upsert(List<FornecedorDto> fornecedorDto)
+        public async Task Upsert(List<FornecedorDto> fornecedorDto, ResponseType responseType)
         {
             var dataSource = GenerateFornecedorListFromFornecedorDtoList(fornecedorDto);
 
@@ -65,6 +65,7 @@ namespace Contracts.Service
                 .UseDatabaseSchema("dbo")
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
+                .SetResponseType(responseType)
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)

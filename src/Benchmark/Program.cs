@@ -7,6 +7,7 @@ using Contracts.Data.Configurations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Contracts.Data.Data.Entities;
+using SqlComplexOperations.Models.Enumerators;
 
 internal class Program
 {
@@ -26,61 +27,61 @@ internal class Program
             .Build();
 
 
-        var _fornecedorService = host.Services.GetService<IFornecedorService>();
+        //var _fornecedorService = host.Services.GetService<IFornecedorService>();
 
 
-        await _fornecedorService.CleanTable();
-        await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
+        //await _fornecedorService.CleanTable();
+        //await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000), ResponseType.ROW_COUNT);
 
-        var fornecedoresMix = await _fornecedorService!.GetMix(1000, true);
+        //var fornecedoresMix = await _fornecedorService!.GetMix(1000, true);
 
-        //Busca todos os que existem no banco de dados
-        var fornecedores = await _fornecedorService.GetMany(fornecedoresMix.Select(f => f.Documento).ToList());
-        var fornecedoresNovos = new List<Fornecedor>();
+        ////Busca todos os que existem no banco de dados
+        //var fornecedores = await _fornecedorService.GetMany(fornecedoresMix.Select(f => f.Documento).ToList());
+        //var fornecedoresNovos = new List<Fornecedor>();
 
-        foreach(var fornecedorDto in fornecedoresMix)
-        {
-            var fornecedor = fornecedores.FirstOrDefault(f => f.Documento.Equals(fornecedorDto.Documento));
+        //foreach(var fornecedorDto in fornecedoresMix)
+        //{
+        //    var fornecedor = fornecedores.FirstOrDefault(f => f.Documento.Equals(fornecedorDto.Documento));
 
-            //Se não existir, insert
-            if(fornecedor == null)
-            {
-                fornecedoresNovos.Add(new Fornecedor(fornecedorDto.Nome, fornecedorDto.Documento, fornecedorDto.Cep));
-                continue;
-            }
+        //    //Se não existir, insert
+        //    if(fornecedor == null)
+        //    {
+        //        fornecedoresNovos.Add(new Fornecedor(fornecedorDto.Nome, fornecedorDto.Documento, fornecedorDto.Cep));
+        //        continue;
+        //    }
 
-            //Se existir, valida se tem modificação e executa o updade
-            if(fornecedorDto.Nome != fornecedor.Nome || fornecedorDto.Cep != fornecedor.Cep)
-            {
-                fornecedor.Nome = fornecedorDto.Nome;
-                fornecedor.Cep = fornecedorDto.Cep;
-                fornecedor.DataAlteracao = DateTime.Now;
-                await _fornecedorService.Update(fornecedor);
-                Console.WriteLine("Dado alterado");
-                continue;
-            }
+        //    //Se existir, valida se tem modificação e executa o updade
+        //    if(fornecedorDto.Nome != fornecedor.Nome || fornecedorDto.Cep != fornecedor.Cep)
+        //    {
+        //        fornecedor.Nome = fornecedorDto.Nome;
+        //        fornecedor.Cep = fornecedorDto.Cep;
+        //        fornecedor.DataAlteracao = DateTime.Now;
+        //        await _fornecedorService.Update(fornecedor);
+        //        Console.WriteLine("Dado alterado");
+        //        continue;
+        //    }
 
-            //Caso não tenha modificação, descarta o dado
-            Console.WriteLine("Dado descartado");
-        }
+        //    //Caso não tenha modificação, descarta o dado
+        //    Console.WriteLine("Dado descartado");
+        //}
 
-        if(fornecedoresNovos != null)
-        {
-            await _fornecedorService.InsertRange(fornecedoresNovos);
-            Console.WriteLine("Novos fornecedores inseridos");
-        }
-
-
-
+        //if(fornecedoresNovos != null)
+        //{
+        //    await _fornecedorService.InsertRange(fornecedoresNovos);
+        //    Console.WriteLine("Novos fornecedores inseridos");
+        //}
 
 
 
-        //await TesteUpsert(host);
-        //await TesteUpdateCompleto(host);
-        //await TesteUpdateMetadeDadosEditados(host);
-        //await TesteUpdateMetadeDadosEditadosEmMemoria(host);
-        //await TesteUpsertEmMemoria(host);
 
+
+
+        await TesteUpsert(host);
+        await TesteUpdateCompleto(host);
+        await TesteUpdateMetadeDadosEditados(host);
+        await TesteUpdateMetadeDadosEditadosEmMemoria(host);
+        await TesteUpsertEmMemoria(host);
+        TesteUpsertResponseTypeDiferentes();
     }
 
     /// <summary>
@@ -127,6 +128,14 @@ internal class Program
     static async Task TesteUpdateMetadeDadosEditadosEmMemoria(IHost host)
     {
         BenchmarkRunner.Run<TesteUpdateMetadeDadosEditadosEmMemoria>();
+    }
+
+    /// <summary>
+    /// Testa os diferentes tipos de response type
+    /// </summary>
+    static void TesteUpsertResponseTypeDiferentes()
+    {
+        BenchmarkRunner.Run<TesteUpsertResponseTypeDiferentes>();
     }
 
     public static ServiceProvider GetServiceProvider(IConfiguration configuration)

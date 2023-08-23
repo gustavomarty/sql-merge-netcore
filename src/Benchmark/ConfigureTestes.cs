@@ -1,5 +1,6 @@
 ﻿using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
+using SqlComplexOperations.Models.Enumerators;
 
 public class ConfigureTestes
 {
@@ -48,7 +49,7 @@ public class ConfigureTestes
         await _materialService.Upsert(_materials);
 
         //Insert Fornecedor
-        await _fornecedorService.Upsert(_fornecedores);
+        await _fornecedorService.Upsert(_fornecedores, ResponseType.ROW_COUNT);
 
         //Insert Contrato
         await _contratoService.Upsert(await _contratoService.GetNewFakes(qtdContratos));

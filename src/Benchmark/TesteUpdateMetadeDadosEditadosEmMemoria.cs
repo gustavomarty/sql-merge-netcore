@@ -4,7 +4,7 @@ using Contracts.Data.Models.Dtos;
 using Contracts.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using SqlComplexOperations.Models.Enumerators;
 
 /// <summary>
 /// 1- Cria 1000 registros no banco
@@ -48,7 +48,7 @@ public class TesteUpdateMetadeDadosEditadosEmMemoria
         Console.WriteLine($"Inicio Unitario -> {DateTime.Now}");
 
         await _fornecedorService.CleanTable();
-        await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
+        await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000), ResponseType.ROW_COUNT);
 
         var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
 
@@ -92,12 +92,12 @@ public class TesteUpdateMetadeDadosEditadosEmMemoria
 
         //Configura o banco com os 100 primeiros fornecedores
         await _fornecedorService.CleanTable();
-        await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000));
+        await _fornecedorService.Upsert(await _fornecedorService.GetNewFakes(1000), ResponseType.ROW_COUNT);
 
         var fornecedoresMix = await _fornecedorService!.GetMix(1000, true, false);
 
         //Roda upsert
-        await _fornecedorService.Upsert(fornecedoresMix);
+        await _fornecedorService.Upsert(fornecedoresMix, ResponseType.ROW_COUNT);
 
         Console.WriteLine($"Fim Bulk -> {DateTime.Now}");
     }
