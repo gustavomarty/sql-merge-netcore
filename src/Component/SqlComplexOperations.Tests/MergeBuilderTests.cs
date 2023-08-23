@@ -5,6 +5,7 @@ using NSubstitute;
 using System.Data;
 using Xunit;
 using SqlComplexOperations.Models.Output;
+using SqlComplexOperations.Exceptions;
 
 namespace SqlComplexOperations.Tests
 {
@@ -764,7 +765,7 @@ namespace SqlComplexOperations.Tests
                 .SetDataSource(dataSource);
 
             //ACTION
-            var result = await Assert.ThrowsAsync<ArgumentException>(() => builder.Execute());
+            var result = await Assert.ThrowsAsync<InvalidDbTransactionException<PersonEntity>>(() => builder.Execute());
 
             //ASSERT
             Assert.Equal("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", result.Message);
@@ -792,7 +793,7 @@ namespace SqlComplexOperations.Tests
                 .SetTransaction(_dbTransaction);
 
             //ACTION
-            var result = await Assert.ThrowsAsync<ArgumentException>(() => builder.Execute());
+            var result = await Assert.ThrowsAsync<InvalidDbTransactionException<PersonEntity>>(() => builder.Execute());
 
             //ASSERT
             Assert.Equal("The DbTransaction informed is without one active Connection.", result.Message);
@@ -819,7 +820,7 @@ namespace SqlComplexOperations.Tests
                 .SetTransaction(_dbTransaction);
 
             //ACTION
-            var result = await Assert.ThrowsAsync<ArgumentException>(() => builder.Execute());
+            var result = await Assert.ThrowsAsync<InvalidMergedColumnsException<PersonEntity>>(() => builder.Execute());
 
             //ASSERT
             Assert.Equal("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.", result.Message);
@@ -846,7 +847,7 @@ namespace SqlComplexOperations.Tests
                 .SetTransaction(_dbTransaction);
 
             //ACTION
-            var result = await Assert.ThrowsAsync<ArgumentException>(() => builder.Execute());
+            var result = await Assert.ThrowsAsync<InvalidUpdatedColumnsException<PersonEntity>>(() => builder.Execute());
 
             //ASSERT
             Assert.Equal("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.", result.Message);
@@ -873,7 +874,7 @@ namespace SqlComplexOperations.Tests
                 .SetTransaction(_dbTransaction);
 
             //ACTION
-            var result = await Assert.ThrowsAsync<ArgumentException>(() => builder.Execute());
+            var result = await Assert.ThrowsAsync<InvalidDataSourceException<PersonEntity>>(() => builder.Execute());
 
             //ASSERT
             Assert.Equal("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", result.Message);
