@@ -13,7 +13,7 @@ namespace SqlComplexOperations.Services
     [ExcludeFromCodeCoverage]
     public class DatabaseService : IDatabaseService
     {
-        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase)
+        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr)
         {
             DataTable table = new()
             {
@@ -23,7 +23,7 @@ namespace SqlComplexOperations.Services
             using var bulkInsert = new SqlBulkCopy(dbTransaction.Connection as SqlConnection, SqlBulkCopyOptions.Default, dbTransaction as SqlTransaction);
             bulkInsert.DestinationTableName = table.TableName;
 
-            using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase);
+            using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase, propNameAttr);
             await bulkInsert.WriteToServerAsync(dataReader);
         }
 
@@ -89,7 +89,7 @@ namespace SqlComplexOperations.Services
             };
         }
 
-        public OutputModelComplete<T> ExecuteMergeCommandComplete<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase)
+        public OutputModelComplete<T> ExecuteMergeCommandComplete<T>(IDbTransaction dbTransaction, string command, List<string> columns, bool isSnakeCase, bool propNameAttr)
             where T : class
         {
             var dataList = new List<OutputDataComplete<T>>();
@@ -100,8 +100,22 @@ namespace SqlComplexOperations.Services
             sqlCommand.CommandText = command;
 
             List<string> codeColumns = columns;
-            if(isSnakeCase)
+            if(propNameAttr)
+            {
+                var newCodeColumns = new List<string>();
+
+                foreach(var c in columns)
+                {
+                    var field = typeof(T).GetProperties().First(x => x.GetPropName(true).Equals(c));
+                    newCodeColumns.Add(field.Name);
+                }
+
+                codeColumns = newCodeColumns;
+            }
+            else if(isSnakeCase)
+            {
                 codeColumns = columns.Select(x => x.ToPascalCase()).ToList();
+            }
 
             using(var rdr = sqlCommand.ExecuteReader())
             {
