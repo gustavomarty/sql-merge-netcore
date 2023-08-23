@@ -5,6 +5,7 @@ using SqlComplexOperations.Extensions;
 using SqlComplexOperations.Models.Enumerators;
 using System.Linq.Expressions;
 using SqlComplexOperations.Models.Output;
+using SqlComplexOperations.Exceptions;
 
 namespace SqlComplexOperations
 {
@@ -400,19 +401,19 @@ namespace SqlComplexOperations
         private void ValidateBuilderPreExecute()
         {
             if(DbTransaction == null)
-                throw new ArgumentException("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.");
+                throw new InvalidDbTransactionException<TEntity>("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", DbTransaction, this);
 
             if(DbTransaction.Connection == null)
-                throw new ArgumentException("The DbTransaction informed is without one active Connection.");
+                throw new InvalidDbTransactionException<TEntity>("The DbTransaction informed is without one active Connection.", DbTransaction, this);
 
             if(!MergedColumns.Any())
-                throw new ArgumentException("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.");
+                throw new InvalidMergedColumnsException<TEntity>("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.", MergedColumns, this);
 
             if(!UpdatedColumns.Any())
-                throw new ArgumentException("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.");
+                throw new InvalidUpdatedColumnsException<TEntity>("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.", UpdatedColumns, this);
 
             if(!DataSource.Any())
-                throw new ArgumentException("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.");
+                throw new InvalidDataSourceException<TEntity>("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", DataSource, this);
         }
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
