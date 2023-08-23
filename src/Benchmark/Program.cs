@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Contracts.Data.Data.Entities;
 using SqlComplexOperations.Models.Enumerators;
+using SqlComplexOperations.Attributes;
+using System.Reflection;
 
 internal class Program
 {
@@ -26,6 +28,21 @@ internal class Program
             })
             .Build();
 
+
+        foreach(var prop in typeof(Campeonato).GetProperties())
+        {
+            var attribute = prop.GetCustomAttribute<PropertyNameAttribute>(true);
+
+            if(attribute == null)
+            {
+                Console.WriteLine($"ATTRIBUTE NULL");
+                return;
+            }
+
+            var value = attribute.PropertyName;
+
+            Console.WriteLine($"VALUE PROP: {value}");
+        }
 
         //var _fornecedorService = host.Services.GetService<IFornecedorService>();
 
@@ -76,12 +93,12 @@ internal class Program
 
 
 
-        await TesteUpsert(host);
-        await TesteUpdateCompleto(host);
-        await TesteUpdateMetadeDadosEditados(host);
-        await TesteUpdateMetadeDadosEditadosEmMemoria(host);
-        await TesteUpsertEmMemoria(host);
-        TesteUpsertResponseTypeDiferentes();
+        //await TesteUpsert(host);
+        //await TesteUpdateCompleto(host);
+        //await TesteUpdateMetadeDadosEditados(host);
+        //await TesteUpdateMetadeDadosEditadosEmMemoria(host);
+        //await TesteUpsertEmMemoria(host);
+        //TesteUpsertResponseTypeDiferentes();
     }
 
     /// <summary>

@@ -141,7 +141,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.ExecuteReaderCommand(Arg.Any<IDbTransaction>(), Arg.Is(buildAllColumnsDbOrderQuery))
                 .Returns(columns);
 
-            _databaseService.ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false)
+            _databaseService.ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false, false)
                 .Returns(new OutputModelComplete<PersonEntity>
                 {
                     Inserted = 1,
@@ -190,7 +190,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteScalarCommand(Arg.Any<IDbTransaction>(), pkQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), createTempTableQuery);
             _databaseService.Received(1).ExecuteNonQueryCommand(Arg.Any<IDbTransaction>(), dropTempTableQuery);
-            _databaseService.Received(1).ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false);
+            _databaseService.Received(1).ExecuteMergeCommandComplete<PersonEntity>(Arg.Any<IDbTransaction>(), mergeQuery, columns, false, false);
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE ROW_COUNT)")]

@@ -4,6 +4,7 @@ using Contracts.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Contracts.Data.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20230823111512_AddTabCampeonato")]
+    partial class AddTabCampeonato
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,23 +36,31 @@ namespace Contracts.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("test_ano");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("teStNoMe");
+                        .HasColumnName("test_nome");
 
                     b.Property<string>("Pais")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("test_pais");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int")
-                        .HasColumnName("sts");
-
                     b.Property<DateTime?>("UpdateAt")
                         .HasColumnType("datetime2")
-                        .HasColumnName("updatE_at");
+                        .HasColumnName("update_at");
+
+                    b.Property<string>("UpdateBy")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("update_by");
 
                     b.HasKey("Id")
                         .HasName("pk_test_campeonato");

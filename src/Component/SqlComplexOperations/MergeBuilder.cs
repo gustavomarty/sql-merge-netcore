@@ -6,6 +6,7 @@ using SqlComplexOperations.Models.Enumerators;
 using System.Linq.Expressions;
 using SqlComplexOperations.Models.Output;
 using SqlComplexOperations.Exceptions;
+using SqlComplexOperations.Attributes;
 
 namespace SqlComplexOperations
 {
@@ -62,6 +63,7 @@ namespace SqlComplexOperations
         private bool UseEnumStatus { get; set; } = false;
         private string PrimaryKey { get; set; } = string.Empty;
         private bool SnakeCaseNamingConvention { get; set; }
+        private bool UsePropertyNameAttr { get; set; }
 
         private List<TEntity> DataSource { get; set; } = new();
         private IDbTransaction? DbTransaction { get; set; }
@@ -119,6 +121,18 @@ namespace SqlComplexOperations
 
         /// <summary>
         /// <para>[Opcional]</para>
+        /// Pega o nome das propriedades de acordo com o Attribute <see cref="PropertyNameAttribute"/>. (Default = FALSE).
+        /// <br></br>
+        /// Em caso de uso do atributo o uso do <see cref="SnakeCaseNamingConvention"/> será ignorado.
+        /// </summary>
+        public MergeBuilder<TEntity> UsePropertyNameAttribute()
+        {
+            UsePropertyNameAttr = true;
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
         /// Define um database schema para rodar os comandos. (Default = FALSE).
         /// </summary>
         /// <remarks>
@@ -145,22 +159,8 @@ namespace SqlComplexOperations
             UseEnumStatus = !useStringType;
 
             var member = (MemberExpression)expression.Body;
-            StatusColumn = member.Member.Name;
+            StatusColumn = member.Member.GetMemberName(UsePropertyNameAttr);
 
-            return this;
-        }
-
-        /// <summary>
-        /// <para>[Opcional]</para>
-        /// Define o tipo de resposta na execução do bulk. (Default = ROW_COUNT).
-        /// </summary>
-        /// <param name="responseType">Tipo do response deve ser do enumerador <see cref="ResponseType"/>.</param>
-        /// <returns>
-        /// Retorna o MergeBuilder atual.
-        /// </returns>
-        public MergeBuilder<TEntity> SetResponseType(ResponseType responseType)
-        {
-            ResponseTypeValue = responseType;
             return this;
         }
 
@@ -178,8 +178,22 @@ namespace SqlComplexOperations
             UseEnumStatus = !useStringType;
 
             var member = (MemberExpression)expression.Body;
-            StatusColumn = member.Member.Name;
+            StatusColumn = member.Member.GetMemberName(UsePropertyNameAttr);
 
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
+        /// Define o tipo de resposta na execução do bulk. (Default = ROW_COUNT).
+        /// </summary>
+        /// <param name="responseType">Tipo do response deve ser do enumerador <see cref="ResponseType"/>.</param>
+        /// <returns>
+        /// Retorna o MergeBuilder atual.
+        /// </returns>
+        public MergeBuilder<TEntity> SetResponseType(ResponseType responseType)
+        {
+            ResponseTypeValue = responseType;
             return this;
         }
 
@@ -282,7 +296,7 @@ namespace SqlComplexOperations
             where TFieldType : struct
         {
             var member = (MemberExpression)expression.Body;
-            var column = member.Member.Name;
+            var column = member.Member.GetMemberName(UsePropertyNameAttr);
 
             var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
@@ -311,7 +325,7 @@ namespace SqlComplexOperations
         public MergeBuilder<TEntity> WithCondition(ConditionType conditionType, Expression<Func<TEntity, string>> expression)
         {
             var member = (MemberExpression)expression.Body;
-            var column = member.Member.Name;
+            var column = member.Member.GetMemberName(UsePropertyNameAttr);
 
             var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
@@ -401,7 +415,7 @@ namespace SqlComplexOperations
         private void ValidateBuilderPreExecute()
         {
             if(DbTransaction == null)
-                throw new InvalidDbTransactionException<TEntity>("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", DbTransaction, this);
+                throw new InvalidDbTransactionException<TEntity>("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", this);
 
             if(DbTransaction.Connection == null)
                 throw new InvalidDbTransactionException<TEntity>("The DbTransaction informed is without one active Connection.", DbTransaction, this);
@@ -414,6 +428,9 @@ namespace SqlComplexOperations
 
             if(!DataSource.Any())
                 throw new InvalidDataSourceException<TEntity>("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", DataSource, this);
+
+            if(UsePropertyNameAttr && typeof(TEntity).GetProperties().Select(x => x.GetPropName(true)).Any(x => string.IsNullOrWhiteSpace(x)))
+                throw new InvalidPropertyNameConfigurationException<TEntity>("You are using the 'UsePropertyNameAttribute' configuration, all attributes of your entity needs be mapped.", this);
         }
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
@@ -459,7 +476,7 @@ namespace SqlComplexOperations
             {
                 ResponseType.NONE => _databaseService.ExecuteMergeCommand(dbTransaction, stringQuery),
                 ResponseType.SIMPLE => _databaseService.ExecuteMergeCommandSimple(dbTransaction, stringQuery),
-                ResponseType.COMPLETE => _databaseService.ExecuteMergeCommandComplete<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention),
+                ResponseType.COMPLETE => _databaseService.ExecuteMergeCommandComplete<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention, UsePropertyNameAttr),
                 _ => _databaseService.ExecuteMergeCommandRowCount(dbTransaction, stringQuery),
             };
 
@@ -494,6 +511,9 @@ namespace SqlComplexOperations
             if(!SnakeCaseNamingConvention)
                 return;
 
+            if(UsePropertyNameAttr)
+                return;
+
             _tableName = _tableName.ToSnakeCase();
             StatusColumn = StatusColumn.ToSnakeCase();
 
@@ -516,7 +536,7 @@ namespace SqlComplexOperations
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention);
+            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
         }
 
         private void DropTempTable(IDbTransaction dbTransaction)
@@ -526,11 +546,11 @@ namespace SqlComplexOperations
             _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }
 
-        private static List<string> GetColumns(Expression<Func<TEntity, object>> expressions)
+        private List<string> GetColumns(Expression<Func<TEntity, object>> expressions)
         {
-            var names = ExpressionExtension.GetMemberNames(expressions);
+            var names = ExpressionExtension.GetMemberNames(UsePropertyNameAttr, expressions);
             if (names != null && names.Any())
-                return names;
+                return names.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
 
             return new();
         }

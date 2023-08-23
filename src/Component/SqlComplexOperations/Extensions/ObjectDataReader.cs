@@ -19,14 +19,14 @@ namespace SqlComplexOperations.Extensions
             Initialize();
         }
 
-        internal ObjectDataReader(IEnumerator<T> enumerator, List<string> columnOrder, bool isSnakeCase)
+        internal ObjectDataReader(IEnumerator<T> enumerator, List<string> columnOrder, bool isSnakeCase, bool propNameAttr)
         {
             _enumerator = enumerator ?? throw new ArgumentNullException(nameof(enumerator));
 
-            if(isSnakeCase)
+            if(isSnakeCase && !propNameAttr)
                 columnOrder = columnOrder.Select(x => x.ToPascalCase()).ToList();
 
-            Initialize(columnOrder);
+            Initialize(columnOrder, isSnakeCase, propNameAttr);
         }
 
         private void Initialize()
@@ -58,14 +58,27 @@ namespace SqlComplexOperations.Extensions
             }
         }
 
-        private void Initialize(List<string> columnOrder)
+        private void Initialize(List<string> columnOrder, bool isSnakeCase, bool propNameAttr)
         {
             _getPropValueFunc = new Func<T, object>[columnOrder.Count];
+            var props = typeof(T).GetProperties();
 
             var ordinal = 0;
             foreach(var name in columnOrder)
             {
                 var propertyName = name;
+
+                if(propNameAttr)
+                {
+                    var nameToCompare = name;
+
+                    var propInfo = props.FirstOrDefault(x => x.GetPropName(true).Equals(nameToCompare));
+                    if(propInfo != null)
+                    {
+                        propertyName = propInfo.Name;
+                    }
+                }
+
                 _propToOrdinalTable.Add(propertyName, ordinal);
                 _ordinalToPropTable.Add(ordinal, propertyName);
 
