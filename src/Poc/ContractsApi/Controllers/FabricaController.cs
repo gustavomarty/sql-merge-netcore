@@ -28,6 +28,7 @@ namespace Contracts.Api.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             var mergeBuilder = _mergeBuilder.Create<Fabrica>()
+                .DeleteWhenDataIsNotInDataSource()
                 .UseSnakeCaseNamingConvention()
                 .UseDatabaseSchema("test")
                 .SetResponseType(ResponseType.COMPLETE)

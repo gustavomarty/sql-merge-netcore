@@ -14,5 +14,6 @@ namespace SqlComplexOperations.Models
         public string StatusColumn { get; set; } = string.Empty;
         public bool UseEnumStatus { get; set; }
         public ResponseType ResponseType { get; set; }
+        public bool UseDeleteClause { get; set; }
     }
 }

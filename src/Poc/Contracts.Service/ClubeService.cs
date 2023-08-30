@@ -59,6 +59,7 @@ namespace Contracts.Service
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             var builder = await _mergeBuilder.Create<Clube>()
+                .DeleteWhenDataIsNotInDataSource()
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .UseSnakeCaseNamingConvention()

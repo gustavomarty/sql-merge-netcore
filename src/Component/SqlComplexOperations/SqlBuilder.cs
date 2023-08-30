@@ -53,7 +53,10 @@ namespace SqlComplexOperations
             stringBuilderQuery.Append($" then \n update set ");
             BuildUpdatedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.UpdatedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
-            stringBuilderQuery.Append($"\n when not matched then \n insert ");
+            if(mergeBuilderSqlConfiguration.UseDeleteClause)
+                BuildDeletedClause(stringBuilderQuery, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
+
+            stringBuilderQuery.Append($"\n when not matched by target then \n insert ");
             BuildInsertedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.InsertedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
             BuildOutput(stringBuilderQuery, mergeBuilderSqlConfiguration.ResponseType, mergeBuilderSqlConfiguration.AllColumns);
@@ -71,16 +74,17 @@ namespace SqlComplexOperations
             return $@"drop table #{tableName}";
         }
 
-        private static void BuildMergedColumns(StringBuilder stringBuilderQuery, List<string> MergedColumns)
+        private static void BuildMergedColumns(StringBuilder stringBuilderQuery, List<string> mergedColumns)
         {
-            for (int i = 0; i < MergedColumns.Count; i++)
+            for (int i = 0; i < mergedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"tgt.{MergedColumns[i]} = src.{MergedColumns[i]}");
+                stringBuilderQuery.Append($"tgt.{mergedColumns[i]} = src.{mergedColumns[i]}");
 
-                if (i != (MergedColumns.Count - 1))
+                if (i != (mergedColumns.Count - 1))
                     stringBuilderQuery.Append(" AND ");
             }
         }
+
         private static void BuildConditions(StringBuilder stringBuilderQuery, List<ConditionBuilder> conditions)
         {
             for (int i = 0; i < conditions.Count; i++)
@@ -104,48 +108,70 @@ namespace SqlComplexOperations
                 stringBuilderQuery.Append(')');
             }
         }
-        private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> UpdatedColumns, string StatusColumn, bool useEnumStatus)
-        {
-            for (int i = 0; i < UpdatedColumns.Count; i++)
-            {
-                stringBuilderQuery.Append($"tgt.{UpdatedColumns[i]} = src.{UpdatedColumns[i]}");
 
-                if (i != (UpdatedColumns.Count - 1))
+        private static void BuildUpdatedColumns(StringBuilder stringBuilderQuery, List<string> updatedColumns, string statusColumn, bool useEnumStatus)
+        {
+            for (int i = 0; i < updatedColumns.Count; i++)
+            {
+                stringBuilderQuery.Append($"tgt.{updatedColumns[i]} = src.{updatedColumns[i]}");
+
+                if (i != (updatedColumns.Count - 1))
                     stringBuilderQuery.Append($", ");
             }
 
-            if (!string.IsNullOrWhiteSpace(StatusColumn))
+            if (!string.IsNullOrWhiteSpace(statusColumn))
             {
                 if (useEnumStatus)
-                    stringBuilderQuery.Append($", tgt.{StatusColumn} = {(int)BulkMergeStatus.UPDATED}");
+                    stringBuilderQuery.Append($", tgt.{statusColumn} = {(int)BulkMergeStatus.UPDATED}");
                 else
-                    stringBuilderQuery.Append($", tgt.{StatusColumn} = '{BulkMergeStatus.UPDATED}'");
+                    stringBuilderQuery.Append($", tgt.{statusColumn} = '{BulkMergeStatus.UPDATED}'");
 
             }
         }
-        private static void BuildInsertedColumns(StringBuilder stringBuilderQuery, List<string> InsertedColumns, string StatusColumn, bool useEnumStatus)
+
+        private static void BuildDeletedClause(StringBuilder stringBuilderQuery, string statusColumn, bool useEnumStatus)
+        {
+            stringBuilderQuery.Append($"\n when not matched by source then ");
+
+            if(string.IsNullOrWhiteSpace(statusColumn))
+            {
+                stringBuilderQuery.Append($"\n delete ");
+                return;
+            }
+
+            if(useEnumStatus)
+            {
+                stringBuilderQuery.Append($"\n update set tgt.{statusColumn} = {(int)BulkMergeStatus.DELETED} ");
+            }
+            else
+            {
+                stringBuilderQuery.Append($"\n update set tgt.{statusColumn} = '{BulkMergeStatus.DELETED}' ");
+            }
+        }
+
+        private static void BuildInsertedColumns(StringBuilder stringBuilderQuery, List<string> insertedColumns, string statusColumn, bool useEnumStatus)
         {
             stringBuilderQuery.Append($" (");
-            for (int i = 0; i < InsertedColumns.Count; i++)
+            for (int i = 0; i < insertedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"{InsertedColumns[i]}");
+                stringBuilderQuery.Append($"{insertedColumns[i]}");
 
-                if (i != (InsertedColumns.Count - 1))
+                if (i != (insertedColumns.Count - 1))
                     stringBuilderQuery.Append(", ");
             }
-            if (!string.IsNullOrWhiteSpace(StatusColumn))
-                stringBuilderQuery.Append($", {StatusColumn}");
+            if (!string.IsNullOrWhiteSpace(statusColumn))
+                stringBuilderQuery.Append($", {statusColumn}");
 
             stringBuilderQuery.Append($") values (");
-            for (int i = 0; i < InsertedColumns.Count; i++)
+            for (int i = 0; i < insertedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"src.{InsertedColumns[i]}");
+                stringBuilderQuery.Append($"src.{insertedColumns[i]}");
 
-                if (i != (InsertedColumns.Count - 1))
+                if (i != (insertedColumns.Count - 1))
                     stringBuilderQuery.Append(", ");
             }
 
-            if (!string.IsNullOrWhiteSpace(StatusColumn))
+            if (!string.IsNullOrWhiteSpace(statusColumn))
             {
                 if (useEnumStatus)
                     stringBuilderQuery.Append($", {(int)BulkMergeStatus.INSERTED}");

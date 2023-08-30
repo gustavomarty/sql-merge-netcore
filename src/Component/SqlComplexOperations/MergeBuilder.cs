@@ -64,6 +64,7 @@ namespace SqlComplexOperations
         private string PrimaryKey { get; set; } = string.Empty;
         private bool SnakeCaseNamingConvention { get; set; }
         private bool UsePropertyNameAttr { get; set; }
+        private bool UseDeleteClause { get; set; }
 
         private List<TEntity> DataSource { get; set; } = new();
         private IDbTransaction? DbTransaction { get; set; }
@@ -142,6 +143,16 @@ namespace SqlComplexOperations
         public MergeBuilder<TEntity> UseDatabaseSchema(string schema)
         {
             DbSchema = schema;
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
+        /// Deleta os dados da tabela destino caso os mesmos nao existam no data source. (Default = FALSE).
+        /// </summary>
+        public MergeBuilder<TEntity> DeleteWhenDataIsNotInDataSource()
+        {
+            UseDeleteClause = true;
             return this;
         }
 
@@ -467,7 +478,8 @@ namespace SqlComplexOperations
                 Conditions = Conditions,
                 StatusColumn = StatusColumn,
                 UseEnumStatus = UseEnumStatus,
-                ResponseType = ResponseTypeValue
+                ResponseType = ResponseTypeValue,
+                UseDeleteClause = UseDeleteClause
             };
 
             var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);

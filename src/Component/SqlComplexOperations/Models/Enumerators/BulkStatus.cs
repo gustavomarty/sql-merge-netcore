@@ -25,6 +25,12 @@ namespace SqlComplexOperations.Models.Enumerators
         /// Quando o registro precisa ser inserido.
         /// </summary>
         [Description("INSERTED")]
-        INSERTED = 2
+        INSERTED = 2,
+
+        /// <summary>
+        /// Quando o registro não existe na origem e somente no destino (Precisa ser deletado caso a configuracao de delete esteja ativa).
+        /// </summary>
+        [Description("DELETED")]
+        DELETED = 3
     }
 }
