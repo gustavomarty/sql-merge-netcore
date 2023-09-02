@@ -6,13 +6,13 @@ namespace SqlComplexOperations.Exceptions
     public class InvalidDataSourceException<T> : Exception, ISerializable
         where T : class
     {
-        public InvalidDataSourceException(string message, List<T> dataSource, MergeBuilder<T> mergeBuilder) : base(message)
+        public InvalidDataSourceException(string message, List<T> dataSource, string operation) : base(message)
         {
             DataSource = dataSource;
-            MergeBuilder = mergeBuilder;
+            Operation = operation;
         }
 
-        public MergeBuilder<T>? MergeBuilder { get; }
+        public string Operation { get; }
         public List<T>? DataSource { get; }
     }
 }

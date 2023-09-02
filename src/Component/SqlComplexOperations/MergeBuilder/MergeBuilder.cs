@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using SqlComplexOperations.Models.Output;
 using SqlComplexOperations.Exceptions;
 using SqlComplexOperations.Attributes;
+using SqlComplexOperations.Common;
 
 namespace SqlComplexOperations
 {
@@ -411,7 +412,7 @@ namespace SqlComplexOperations
         {
             ValidateBuilderPreExecute();
             CheckSnakeCaseOnExecuteCommand();
-            
+
             SetAllColumnsInDatabaseOrder(DbTransaction!);
             SetPrimaryKeyColumn(DbTransaction!);
             CreateTempTable(DbTransaction!);
@@ -425,23 +426,23 @@ namespace SqlComplexOperations
 
         private void ValidateBuilderPreExecute()
         {
-            if(DbTransaction == null)
-                throw new InvalidDbTransactionException<TEntity>("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", this);
+            if (DbTransaction == null)
+                throw new InvalidDbTransactionException<TEntity>("You need to inform the DbTransaction, call the method SetTransaction(IDbTransaction transaction) before execute merge.", typeof(MergeBuilder).ToString());
 
-            if(DbTransaction.Connection == null)
-                throw new InvalidDbTransactionException<TEntity>("The DbTransaction informed is without one active Connection.", DbTransaction, this);
+            if (DbTransaction.Connection == null)
+                throw new InvalidDbTransactionException<TEntity>("The DbTransaction informed is without one active Connection.", DbTransaction, typeof(MergeBuilder).ToString());
 
-            if(!MergedColumns.Any())
+            if (!MergedColumns.Any())
                 throw new InvalidMergedColumnsException<TEntity>("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.", MergedColumns, this);
 
-            if(!UpdatedColumns.Any())
+            if (!UpdatedColumns.Any())
                 throw new InvalidUpdatedColumnsException<TEntity>("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.", UpdatedColumns, this);
 
-            if(!DataSource.Any())
-                throw new InvalidDataSourceException<TEntity>("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", DataSource, this);
+            if (!DataSource.Any())
+                throw new InvalidDataSourceException<TEntity>("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", DataSource, typeof(MergeBuilder).ToString());
 
-            if(UsePropertyNameAttr && typeof(TEntity).GetProperties().Select(x => x.GetPropName(true)).Any(x => string.IsNullOrWhiteSpace(x)))
-                throw new InvalidPropertyNameConfigurationException<TEntity>("You are using the 'UsePropertyNameAttribute' configuration, all attributes of your entity needs be mapped.", this);
+            if (UsePropertyNameAttr && typeof(TEntity).GetProperties().Select(x => x.GetPropName(true)).Any(x => string.IsNullOrWhiteSpace(x)))
+                throw new InvalidPropertyNameConfigurationException<TEntity>("You are using the 'UsePropertyNameAttribute' configuration, all attributes of your entity needs be mapped.", typeof(MergeBuilder).ToString());
         }
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
@@ -452,7 +453,7 @@ namespace SqlComplexOperations
 
             PrimaryKey = result?.ToString() ?? string.Empty;
 
-            if(SnakeCaseNamingConvention)
+            if (SnakeCaseNamingConvention)
                 PrimaryKey = PrimaryKey.ToSnakeCase();
         }
 
@@ -483,7 +484,7 @@ namespace SqlComplexOperations
             };
 
             var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
-            
+
             OutputModel result = ResponseTypeValue switch
             {
                 ResponseType.NONE => _databaseService.ExecuteMergeCommand(dbTransaction, stringQuery),
@@ -520,10 +521,10 @@ namespace SqlComplexOperations
 
         private void CheckSnakeCaseOnExecuteCommand()
         {
-            if(!SnakeCaseNamingConvention)
+            if (!SnakeCaseNamingConvention)
                 return;
 
-            if(UsePropertyNameAttr)
+            if (UsePropertyNameAttr)
                 return;
 
             _tableName = _tableName.ToSnakeCase();
@@ -533,7 +534,8 @@ namespace SqlComplexOperations
             UpdatedColumns = UpdatedColumns.Select(x => x.ToSnakeCase()).ToList();
             MergedColumns = MergedColumns.Select(x => x.ToSnakeCase()).ToList();
 
-            Conditions = Conditions.Select(x => {
+            Conditions = Conditions.Select(x =>
+            {
                 var fields = x.Fields.Select(y => y.ToSnakeCase()).ToList();
                 return new ConditionBuilder(fields, x.ConditionType, x.ConditionOperator);
             }).ToList();
@@ -548,7 +550,7 @@ namespace SqlComplexOperations
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            await _databaseService.PopulateTempTable(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
+            await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
         }
 
         private void DropTempTable(IDbTransaction dbTransaction)

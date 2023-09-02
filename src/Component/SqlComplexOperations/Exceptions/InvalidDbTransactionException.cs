@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using Azure;
+using System.Data;
 using System.Runtime.Serialization;
 
 namespace SqlComplexOperations.Exceptions
@@ -7,18 +8,18 @@ namespace SqlComplexOperations.Exceptions
     public class InvalidDbTransactionException<T> : Exception, ISerializable
         where T : class
     {
-        public InvalidDbTransactionException(string message, MergeBuilder<T> mergeBuilder) : base(message)
+        public InvalidDbTransactionException(string message, string operation) : base(message)
         {
-            MergeBuilder = mergeBuilder;
+            Operation = operation;
         }
 
-        public InvalidDbTransactionException(string message, IDbTransaction dbTransaction, MergeBuilder<T> mergeBuilder) : base(message)
+        public InvalidDbTransactionException(string message, IDbTransaction dbTransaction, string operation) : base(message)
         {
             DbTransaction = dbTransaction;
-            MergeBuilder = mergeBuilder;
+            Operation = operation;
         }
 
-        public MergeBuilder<T>? MergeBuilder { get; }
+        public string Operation { get; }
         public IDbTransaction? DbTransaction { get; }
     }
 }

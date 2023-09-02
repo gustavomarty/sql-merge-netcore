@@ -13,7 +13,7 @@ namespace SqlComplexOperations.Services
     [ExcludeFromCodeCoverage]
     public class DatabaseService : IDatabaseService
     {
-        public async Task PopulateTempTable<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr)
+        public async Task BulkInsert<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr)
         {
             DataTable table = new()
             {

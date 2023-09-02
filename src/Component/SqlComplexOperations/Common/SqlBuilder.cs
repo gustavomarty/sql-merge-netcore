@@ -3,13 +3,13 @@ using SqlComplexOperations.Models;
 using SqlComplexOperations.Models.Enumerators;
 using System.Text;
 
-namespace SqlComplexOperations
+namespace SqlComplexOperations.Common
 {
     internal static class SqlBuilder
     {
         internal static string BuildTempTable(string tableName, string schema)
         {
-            if(!string.IsNullOrWhiteSpace(schema))
+            if (!string.IsNullOrWhiteSpace(schema))
             {
                 return $@"Select Top 0 * into [{schema}].#{tableName} from [{schema}].{tableName}";
             }
@@ -21,7 +21,7 @@ namespace SqlComplexOperations
         {
             var sql = new StringBuilder($"select column_name from information_schema.key_column_usage where objectproperty(object_id(constraint_schema + '.' + quotename(constraint_name)), 'IsPrimaryKey') = 1 and table_name = '{tableName}'");
 
-            if(!string.IsNullOrWhiteSpace(schema))
+            if (!string.IsNullOrWhiteSpace(schema))
             {
                 sql.Append($" and table_schema = '{schema}'");
             }
@@ -31,7 +31,7 @@ namespace SqlComplexOperations
 
         internal static string BuildAllColumnsDbOrderQuery(string tableName, string schema)
         {
-            if(!string.IsNullOrWhiteSpace(schema))
+            if (!string.IsNullOrWhiteSpace(schema))
             {
                 return $@"select name from sys.columns where object_id = object_id('{schema}.{tableName}') order by column_id";
             }
@@ -41,10 +41,10 @@ namespace SqlComplexOperations
 
         internal static string BuildMerge(MergeBuilderSqlConfiguration mergeBuilderSqlConfiguration)
         {
-            var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema) 
-                ? new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from #{mergeBuilderSqlConfiguration.TableName}) as src on ") 
+            var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema)
+                ? new StringBuilder($"MERGE {mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from #{mergeBuilderSqlConfiguration.TableName}) as src on ")
                 : new StringBuilder($"MERGE [{mergeBuilderSqlConfiguration.Schema}].{mergeBuilderSqlConfiguration.TableName} as tgt \n using (select * from [{mergeBuilderSqlConfiguration.Schema}].#{mergeBuilderSqlConfiguration.TableName}) as src on ");
-            
+
             BuildMergedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.MergedColumns);
 
             stringBuilderQuery.Append($"\n when matched");
@@ -53,7 +53,7 @@ namespace SqlComplexOperations
             stringBuilderQuery.Append($" then \n update set ");
             BuildUpdatedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.UpdatedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
-            if(mergeBuilderSqlConfiguration.UseDeleteClause)
+            if (mergeBuilderSqlConfiguration.UseDeleteClause)
                 BuildDeletedClause(stringBuilderQuery, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
             stringBuilderQuery.Append($"\n when not matched by target then \n insert ");
@@ -66,7 +66,7 @@ namespace SqlComplexOperations
 
         internal static string BuildDropTempTable(string tableName, string schema)
         {
-            if(!string.IsNullOrWhiteSpace(schema))
+            if (!string.IsNullOrWhiteSpace(schema))
             {
                 return $@"drop table [{schema}].#{tableName}";
             }
@@ -80,7 +80,7 @@ namespace SqlComplexOperations
             {
                 stringBuilderQuery.Append($"tgt.{mergedColumns[i]} = src.{mergedColumns[i]}");
 
-                if (i != (mergedColumns.Count - 1))
+                if (i != mergedColumns.Count - 1)
                     stringBuilderQuery.Append(" AND ");
             }
         }
@@ -91,17 +91,17 @@ namespace SqlComplexOperations
             {
                 stringBuilderQuery.Append(" AND (");
 
-                for(int j = 0; j < conditions[i].Fields.Count; j++)
+                for (int j = 0; j < conditions[i].Fields.Count; j++)
                 {
                     var cType = conditions[i].ConditionType.DisplayName();
                     var cOperator = conditions[i].ConditionOperator.DisplayName();
                     var field = conditions[i].Fields[j];
 
-                    if(j != 0)
+                    if (j != 0)
                     {
                         stringBuilderQuery.Append($" {cOperator} ");
                     }
-                    
+
                     stringBuilderQuery.Append($"tgt.{field} {cType} src.{field}");
                 }
 
@@ -115,7 +115,7 @@ namespace SqlComplexOperations
             {
                 stringBuilderQuery.Append($"tgt.{updatedColumns[i]} = src.{updatedColumns[i]}");
 
-                if (i != (updatedColumns.Count - 1))
+                if (i != updatedColumns.Count - 1)
                     stringBuilderQuery.Append($", ");
             }
 
@@ -133,13 +133,13 @@ namespace SqlComplexOperations
         {
             stringBuilderQuery.Append($"\n when not matched by source then ");
 
-            if(string.IsNullOrWhiteSpace(statusColumn))
+            if (string.IsNullOrWhiteSpace(statusColumn))
             {
                 stringBuilderQuery.Append($"\n delete ");
                 return;
             }
 
-            if(useEnumStatus)
+            if (useEnumStatus)
             {
                 stringBuilderQuery.Append($"\n update set tgt.{statusColumn} = {(int)BulkMergeStatus.DELETED} ");
             }
@@ -156,7 +156,7 @@ namespace SqlComplexOperations
             {
                 stringBuilderQuery.Append($"{insertedColumns[i]}");
 
-                if (i != (insertedColumns.Count - 1))
+                if (i != insertedColumns.Count - 1)
                     stringBuilderQuery.Append(", ");
             }
             if (!string.IsNullOrWhiteSpace(statusColumn))
@@ -167,7 +167,7 @@ namespace SqlComplexOperations
             {
                 stringBuilderQuery.Append($"src.{insertedColumns[i]}");
 
-                if (i != (insertedColumns.Count - 1))
+                if (i != insertedColumns.Count - 1)
                     stringBuilderQuery.Append(", ");
             }
 
@@ -184,15 +184,15 @@ namespace SqlComplexOperations
         {
             stringBuilderQuery.Append(')');
 
-            if(responseType == ResponseType.SIMPLE || responseType == ResponseType.ROW_COUNT)
+            if (responseType == ResponseType.SIMPLE || responseType == ResponseType.ROW_COUNT)
             {
                 stringBuilderQuery.Append($" \n output $action");
             }
-            else if(responseType == ResponseType.COMPLETE)
+            else if (responseType == ResponseType.COMPLETE)
             {
                 stringBuilderQuery.Append($" \n output $action");
 
-                foreach(var column in updateColumns)
+                foreach (var column in updateColumns)
                 {
                     stringBuilderQuery.Append($", inserted.{column} as src{column}");
                     stringBuilderQuery.Append($", deleted.{column} as tgt{column}");

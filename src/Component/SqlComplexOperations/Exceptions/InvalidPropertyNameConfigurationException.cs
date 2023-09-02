@@ -6,11 +6,11 @@ namespace SqlComplexOperations.Exceptions
     public class InvalidPropertyNameConfigurationException<T> : Exception, ISerializable
         where T : class
     {
-        public InvalidPropertyNameConfigurationException(string message, MergeBuilder<T> mergeBuilder) : base(message)
+        public InvalidPropertyNameConfigurationException(string message, string operation) : base(message)
         {
-            MergeBuilder = mergeBuilder;
+            Operation = operation;
         }
 
-        public MergeBuilder<T>? MergeBuilder { get; }
+        public string Operation { get; }
     }
 }

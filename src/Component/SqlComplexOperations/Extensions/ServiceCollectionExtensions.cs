@@ -14,6 +14,7 @@ namespace SqlComplexOperations.Extensions
 
             services.AddScoped<IDatabaseService, DatabaseService>();
             services.AddScoped<IMergeBuilder, MergeBuilder>();
+            services.AddScoped<IBulkInsertBuilder, BulkInsertBuilder>();
         }
     }
 }

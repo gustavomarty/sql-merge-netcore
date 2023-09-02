@@ -617,7 +617,7 @@ namespace SqlComplexOperations.Tests
                 "tgt.Document = src.Document",
                 "AND (tgt.Name != src.Name or tgt.BirthDate != src.BirthDate)",
                 "tgt.Name = src.Name, tgt.Document = src.Document, tgt.BirthDate = src.BirthDate, tgt.UpdatedDate = src.UpdatedDate, tgt.Status = 1",
-                "tgt.Status = 3",
+                "tgt.Status = 4",
                 "Name, Document, BirthDate, UpdatedDate, Status",
                 "src.Name, src.Document, src.BirthDate, src.UpdatedDate, 2"
             );
