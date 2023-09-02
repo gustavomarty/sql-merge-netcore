@@ -28,9 +28,15 @@ namespace SqlComplexOperations.Models.Enumerators
         INSERTED = 2,
 
         /// <summary>
+        /// Quando o registro foi processado com erro.
+        /// </summary>
+        [Description("PROCESSED_ERROR")]
+        PROCESSED_ERROR = 3,
+
+        /// <summary>
         /// Quando o registro não existe na origem e somente no destino (Precisa ser deletado caso a configuracao de delete esteja ativa).
         /// </summary>
         [Description("DELETED")]
-        DELETED = 3
+        DELETED = 4
     }
 }
