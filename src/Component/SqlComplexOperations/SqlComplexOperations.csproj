@@ -5,7 +5,25 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>SQL Merge</Title>
+    <Authors>zavadzki72,Gustavo.marty</Authors>
+    <Description>Bulk Batch for Insert Update Delete Read (CRUD) operations on SQL Server.</Description>
+    <PackageProjectUrl>https://github.com/gustavomarty/sql-merge-netcore</PackageProjectUrl>
+    <PackageIcon>efns_logo_icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/gustavomarty/sql-merge-netcore</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\..\..\Videos\efns_logo_icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
