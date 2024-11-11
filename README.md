@@ -23,7 +23,7 @@ Possui o projeto que realiza benchmarks utilizando a abordagem proposta e implem
 
 Com a biblioteca referenciada em seu projeto, realize a injeção da mesma utilizando o método *ConfigureMergeBuilder*:
 
-    builder.Services.ConfigureMergeBuilder();
+    builder.Services.ConfigureSqlComplexOperations();
 
 Com o serviço injetado, já podemos configurar o builder para posteriormente executarmos a intrução no banco de dados. Exemplo abaixo utilizando uma classe de exemplo "Fornecedor":
 
