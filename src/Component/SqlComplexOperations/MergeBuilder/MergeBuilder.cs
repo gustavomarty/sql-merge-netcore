@@ -396,7 +396,7 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
+        public virtual MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
         {
             DbTransaction = transaction;
             return this;
@@ -408,7 +408,7 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o resultado do merge.
         /// </returns>
-        public async Task<OutputModel> Execute()
+        public virtual async Task<OutputModel> Execute()
         {
             ValidateBuilderPreExecute();
             CheckSnakeCaseOnExecuteCommand();

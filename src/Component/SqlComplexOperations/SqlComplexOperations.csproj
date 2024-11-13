@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Title>SQL Merge</Title>
     <Authors>zavadzki72,Gustavo.marty</Authors>
     <Description>Bulk Batch for Insert Update Delete Read (CRUD) operations on SQL Server.</Description>
