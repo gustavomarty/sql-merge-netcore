@@ -8,6 +8,7 @@ using Contracts.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Context = Contracts.Data.Data.ApplicationContext;
+using Contracts.Data.Data;
 
 namespace Contracts.Service
 {
@@ -15,11 +16,13 @@ namespace Contracts.Service
     {
         private readonly Context _context;
         private readonly IMergeBuilder _mergeBuilder;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ClubeService(Context context, IMergeBuilder mergeBuilder)
+        public ClubeService(Context context, IMergeBuilder mergeBuilder, IUnitOfWork unitOfWork)
         {
             _context = context;
             _mergeBuilder = mergeBuilder;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task CleanTable()
@@ -56,20 +59,20 @@ namespace Contracts.Service
         {
             var dataSource = GenerateClubeListFromClubeDtoList(clubesDto);
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var transaction = _unitOfWork.GetDbTransaction();
 
             var builder = await _mergeBuilder.Create<Clube>()
                 .DeleteWhenDataIsNotInDataSource()
                 .SetDataSource(dataSource)
-                .SetTransaction(transaction.GetDbTransaction())
+                .SetTransaction(transaction)
                 .UseSnakeCaseNamingConvention()
                 .SetMergeColumns(x => x.Nome)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Abreviacao, x.Apelido })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .Execute();
 
-            transaction.Commit();
+            _unitOfWork.CommitTransaction();
         }
 
         public async Task<List<Clube>> GetAll()

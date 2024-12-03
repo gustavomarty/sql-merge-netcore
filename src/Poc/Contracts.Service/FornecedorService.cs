@@ -70,7 +70,7 @@ namespace Contracts.Service
                 .SetMergeColumns(x => x.Documento)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .UseStatusConfiguration(false, x => x.Status)
                 .Execute();
 

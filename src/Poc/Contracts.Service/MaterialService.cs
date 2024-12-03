@@ -57,7 +57,7 @@ namespace Contracts.Service
                 .SetMergeColumns(x => x.Numero)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => x.Nome)
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .Execute();
 
             transaction.Commit();

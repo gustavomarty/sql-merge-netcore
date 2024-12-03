@@ -87,7 +87,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -155,7 +155,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -243,7 +243,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.COMPLETE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -313,7 +313,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.ROW_COUNT)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -379,7 +379,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.NONE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -447,7 +447,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -515,7 +515,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.EQUALS, ConditionOperator.AND, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -583,7 +583,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => x)
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -655,7 +655,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -727,7 +727,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -796,7 +796,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -866,7 +866,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.StatusStr })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.StatusStr })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -936,7 +936,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, x => x.Name)
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.Status })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.Status })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -1006,7 +1006,7 @@ namespace SqlComplexOperations.Tests
                 .SetUpdatedColumns(x => new { x.Name, x.Document, x.BirthDate, x.UpdatedDate })
                 .SetResponseType(ResponseType.SIMPLE)
                 .WithCondition(ConditionType.NOT_EQUAL, x => x.BirthDate)
-                .SetIgnoreOnIsertOperation(x => new { x.Id, x.Status })
+                .SetIgnoreOnInsertOperation(x => new { x.Id, x.Status })
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -1042,7 +1042,7 @@ namespace SqlComplexOperations.Tests
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource);
 
             //ACTION
@@ -1069,7 +1069,7 @@ namespace SqlComplexOperations.Tests
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -1096,7 +1096,7 @@ namespace SqlComplexOperations.Tests
             var builder = _mergeBuilder.Create<PersonEntity>()
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -1123,7 +1123,7 @@ namespace SqlComplexOperations.Tests
             var builder = _mergeBuilder.Create<PersonEntity>()
                 .SetMergeColumns(x => x.Document)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetDataSource(dataSource)
                 .SetTransaction(_dbTransaction);
 
@@ -1151,7 +1151,7 @@ namespace SqlComplexOperations.Tests
                 .SetMergeColumns(x => x.Document)
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetTransaction(_dbTransaction);
 
             //ACTION
@@ -1180,7 +1180,7 @@ namespace SqlComplexOperations.Tests
                 .SetDataSource(dataSource)
                 .UsePropertyNameAttribute()
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Name, x.BirthDate })
-                .SetIgnoreOnIsertOperation(x => x.Id)
+                .SetIgnoreOnInsertOperation(x => x.Id)
                 .SetTransaction(_dbTransaction);
 
             //ACTION

@@ -362,7 +362,7 @@ namespace SqlComplexOperations
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
-        public MergeBuilder<TEntity> SetIgnoreOnIsertOperation(Expression<Func<TEntity, object>> expression)
+        public MergeBuilder<TEntity> SetIgnoreOnInsertOperation(Expression<Func<TEntity, object>> expression)
         {
             IgnoredOnInsertOperation.AddRange(GetColumns(expression));
             return this;

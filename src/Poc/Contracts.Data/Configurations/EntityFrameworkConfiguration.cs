@@ -14,6 +14,8 @@ namespace Contracts.Data.Configurations
             services.AddDbContext<ApplicationContext>(options => {
                 options.UseSqlServer(connectionString).UseSnakeCaseNamingConvention();
             }, ServiceLifetime.Scoped);
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
     }
 }
