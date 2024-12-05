@@ -36,11 +36,11 @@ namespace SqlComplexOperations.Tests
             _databaseService = Substitute.For<IDatabaseService>();
             _dbTransaction = Substitute.For<IDbTransaction>();
 
-            _mergeBuilder = new MergeBuilder(_databaseService);
+            _mergeBuilder = new MergeBuilder(_databaseService, DatabaseType.MICROSOFT_SQL_SERVER);
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok()
+        public async Task Test_Ok()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -107,7 +107,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE) Usando annotation de property name")]
-        public async void Test_Ok_WithPropertyNameAnnotation()
+        public async Task Test_Ok_WithPropertyNameAnnotation()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithPropName(10);
@@ -175,7 +175,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE COMPLETE)")]
-        public async void Test_Ok_CompleteResult()
+        public async Task Test_Ok_CompleteResult()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(1);
@@ -264,7 +264,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE ROW_COUNT)")]
-        public async void Test_Ok_RowCountResult()
+        public async Task Test_Ok_RowCountResult()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(1);
@@ -333,7 +333,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | RESULT TYPE NONE)")]
-        public async void Test_Ok_NoneResult()
+        public async Task Test_Ok_NoneResult()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(1);
@@ -398,7 +398,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA ON | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_Schema()
+        public async Task Test_Ok_Schema()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -467,7 +467,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE ON | STATUS OFF | SCHEMA OFF | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_SnakeCase()
+        public async Task Test_Ok_SnakeCase()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -535,7 +535,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF | DELETE CLAUSE = ON | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_DeleteClause_StatusOff()
+        public async Task Test_Ok_DeleteClause_StatusOff()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -603,7 +603,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT | SCHEMA OFF | DELETE CLAUSE = ON | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_DeleteClause_StatusInt()
+        public async Task Test_Ok_DeleteClause_StatusInt()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -675,7 +675,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING | SCHEMA OFF | DELETE CLAUSE = ON | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_DeleteClause_StatusString()
+        public async Task Test_Ok_DeleteClause_StatusString()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -746,7 +746,7 @@ namespace SqlComplexOperations.Tests
             _databaseService.Received(1).ExecuteMergeCommandSimple(Arg.Any<IDbTransaction>(), mergeQuery);
         }
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = INT | SCHEMA OFF | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_StatusInt()
+        public async Task Test_Ok_StatusInt()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -816,7 +816,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON, TYPE = STRING | SCHEMA OFF | RESULT TYPE SIMPLE)")]
-        public async void Test_Ok_StatusString()
+        public async Task Test_Ok_StatusString()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -886,7 +886,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF | RESULT TYPE SIMPLE) usando diferentes chamadas de metodos")]
-        public async void Test_Ok_StatusString_DifMethods()
+        public async Task Test_Ok_StatusString_DifMethods()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -956,7 +956,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS ON | SCHEMA OFF | RESULT TYPE SIMPLE) usando diferentes chamadas de metodos (Condition Struct)")]
-        public async void Test_Ok_StatusString_DifMethods_ConditionStruct()
+        public async Task Test_Ok_StatusString_DifMethods_ConditionStruct()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.GetWithStatus(10);
@@ -1026,7 +1026,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (DbTransaction == null)")]
-        public async void Test_Error_WithoutTransaction()
+        public async Task Test_Error_WithoutTransaction()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -1053,7 +1053,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (DbTransaction.Connection == null)")]
-        public async void Test_Error_WithoutTransactionConnection()
+        public async Task Test_Error_WithoutTransactionConnection()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -1081,7 +1081,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (!MergedColumns.Any())")]
-        public async void Test_Error_WithoutMergedColumns()
+        public async Task Test_Error_WithoutMergedColumns()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -1108,7 +1108,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (!UpdatedColumns.Any())")]
-        public async void Test_Error_WithoutUpdatedColumns()
+        public async Task Test_Error_WithoutUpdatedColumns()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -1135,7 +1135,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (!DataSource.Any())")]
-        public async void Test_Error_WithoutDataSource()
+        public async Task Test_Error_WithoutDataSource()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);
@@ -1162,7 +1162,7 @@ namespace SqlComplexOperations.Tests
         }
 
         [Fact(DisplayName = "Teste cenario com erro (Invalid attribute configuration)")]
-        public async void Test_Error_InvalidPropNameAttribute()
+        public async Task Test_Error_InvalidPropNameAttribute()
         {
             //ARRANGE
             var dataSource = PersonEntityMock.Get(10);

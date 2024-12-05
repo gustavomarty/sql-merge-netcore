@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Npgsql;
 using SqlComplexOperations.Extensions;
 using SqlComplexOperations.Models.Enumerators;
 using SqlComplexOperations.Models.Output;
@@ -25,6 +26,40 @@ namespace SqlComplexOperations.Services
 
             using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase, propNameAttr);
             await bulkInsert.WriteToServerAsync(dataReader);
+        }
+
+        public async Task BulkInsertToPostgre<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr, bool useStringType)
+        {
+            if (dbTransaction.Connection is not NpgsqlConnection connection)
+                throw new InvalidOperationException("A conexão deve ser um NpgsqlConnection.");
+
+            DataTable table = new()
+            {
+                TableName = string.IsNullOrWhiteSpace(schema) ? tableName : $"{schema}.{tableName}"
+            };
+
+            var fullTableName = table.TableName;
+
+            using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase, propNameAttr);
+
+            await using var importer = await connection.BeginBinaryImportAsync($"COPY {fullTableName} ({string.Join(", ", columnOrder)}) FROM STDIN (FORMAT BINARY)");
+
+            while (dataReader.Read())
+            {
+                importer.StartRow();
+                for (int i = 0; i < dataReader.FieldCount; i++)
+                {
+                    var value = dataReader.GetValue(i);
+                    if (value.GetType().IsEnum)
+                    {
+                        value = (useStringType) ? value.ToString() : (int)value;
+                    }
+
+                    importer.Write(value);
+                }
+            }
+
+            await importer.CompleteAsync();
         }
 
         public OutputModel ExecuteMergeCommand(IDbTransaction dbTransaction, string command)

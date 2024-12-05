@@ -70,6 +70,8 @@ namespace Contracts.Service
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Abreviacao, x.Apelido })
                 .SetIgnoreOnInsertOperation(x => x.Id)
+                .DeleteWhenDataIsNotInDataSource()
+                .SetResponseType(ResponseType.SIMPLE)
                 .Execute();
 
             _unitOfWork.CommitTransaction();

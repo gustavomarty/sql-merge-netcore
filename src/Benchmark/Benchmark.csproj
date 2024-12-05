@@ -38,7 +38,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Component\SqlComplexOperations\SqlComplexOperations.csproj" />
-    <ProjectReference Include="..\Poc\Contracts.Data\Contracts.Data.csproj" />
     <ProjectReference Include="..\Poc\Contracts.Service\Contracts.Service.csproj" />
   </ItemGroup>
 

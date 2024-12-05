@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Component\SqlComplexOperations\SqlComplexOperations.csproj" />
-    <ProjectReference Include="..\Contracts.Data\Contracts.Data.csproj" />
+    <ProjectReference Include="..\..\Contracts.Data.Pg\Contracts.Data.Pg.csproj" />
   </ItemGroup>
 
 </Project>
