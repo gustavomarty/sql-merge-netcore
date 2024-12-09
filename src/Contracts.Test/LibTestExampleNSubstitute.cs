@@ -5,6 +5,7 @@ using Contracts.Service;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using SqlComplexOperations;
+using SqlComplexOperations.Models.Enumerators;
 using SqlComplexOperations.Models.Output;
 using SqlComplexOperations.Services;
 using System.Data;
@@ -52,7 +53,7 @@ namespace Contracts.Test
             await _context.SaveChangesAsync();
 
             var databaseServiceMock = Substitute.For<IDatabaseService>();
-            var builderMock = Substitute.ForPartsOf<MergeBuilder<Clube>>(databaseServiceMock);
+            var builderMock = Substitute.ForPartsOf<MergeBuilder<Clube>>(databaseServiceMock, DatabaseType.MICROSOFT_SQL_SERVER);
             _mergeBuilderMock.Create<Clube>().Returns(builderMock);
             builderMock.Execute().Returns(Task.FromResult(new OutputModel()));
 

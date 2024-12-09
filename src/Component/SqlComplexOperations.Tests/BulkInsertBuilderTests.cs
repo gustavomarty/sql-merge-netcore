@@ -32,7 +32,7 @@ namespace SqlComplexOperations.Tests
             _databaseService = Substitute.For<IDatabaseService>();
             _dbTransaction = Substitute.For<IDbTransaction>();
 
-            _bulkInsertBuilder = new BulkInsertBuilder(_databaseService);
+            _bulkInsertBuilder = new BulkInsertBuilder(_databaseService, DatabaseType.MICROSOFT_SQL_SERVER);
         }
 
         [Fact(DisplayName = "Teste cenario correto (SNAKE CASE OFF | STATUS OFF | SCHEMA OFF )")]

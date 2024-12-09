@@ -19,6 +19,11 @@ namespace SqlComplexOperations
         private readonly IDatabaseService _databaseService;
         private readonly DatabaseType _databaseType;
 
+        /// <summary>
+        /// Construtor
+        /// </summary>
+        /// <param name="databaseService"></param>
+        /// <param name="databaseType"></param>
         public MergeBuilder(IDatabaseService databaseService, DatabaseType databaseType)
         {
             _databaseService = databaseService;
@@ -29,7 +34,7 @@ namespace SqlComplexOperations
         /// Cria uma nova instancia do MergeBuilder.
         /// </summary>
         /// <remarks>
-        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
         public MergeBuilder<TEntity> Create<TEntity>() where TEntity : class
         {
@@ -41,7 +46,7 @@ namespace SqlComplexOperations
         /// </summary>
         /// <param name="tableName">Caso necessario voce pode passar o tableName</param>
         /// <remarks>
-        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
         public MergeBuilder<TEntity> Create<TEntity>(string tableName) where TEntity : class
         {
@@ -53,7 +58,7 @@ namespace SqlComplexOperations
     /// Classe para construir o comando SQL Merge.
     /// </summary>
     /// <typeparam name="TEntity">
-    /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+    /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
     /// </typeparam>
     public class MergeBuilder<TEntity> where TEntity : class
     {
@@ -68,25 +73,26 @@ namespace SqlComplexOperations
         private bool SnakeCaseNamingConvention { get; set; }
         private bool UsePropertyNameAttr { get; set; }
         private bool UseDeleteClause { get; set; }
+        private bool EnumAsString { get; set; }
 
-        private List<TEntity> DataSource { get; set; } = new();
+        private List<TEntity> DataSource { get; set; } = [];
         private IDbTransaction? DbTransaction { get; set; }
 
-        private List<string> AllColumns { get; set; } = new();
-        private List<string> MergedColumns { get; set; } = new();
-        private List<string> UpdatedColumns { get; set; } = new();
-        private List<string> IgnoredOnInsertOperation { get; set; } = new();
-        private List<string> AllColumnsInDatabaseOrder { get; set; } = new();
+        private List<string> AllColumns { get; set; } = [];
+        private List<string> MergedColumns { get; set; } = [];
+        private List<string> UpdatedColumns { get; set; } = [];
+        private List<string> IgnoredOnInsertOperation { get; set; } = [];
+        private List<string> AllColumnsInDatabaseOrder { get; set; } = [];
 
         private ResponseType ResponseTypeValue { get; set; } = ResponseType.ROW_COUNT;
 
-        private List<ConditionBuilder> Conditions { get; set; } = new();
+        private List<ConditionBuilder> Conditions { get; set; } = [];
 
         /// <summary>
         /// Cria uma nova instancia do MergeBuilder.
         /// </summary>
         /// <remarks>
-        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
         public MergeBuilder(IDatabaseService databaseService, DatabaseType databaseType)
         {
@@ -98,9 +104,10 @@ namespace SqlComplexOperations
         /// <summary>
         /// Cria uma nova instancia do MergeBuilder.
         /// </summary>
+        /// <param name="databaseService"></param>
         /// <param name="tableName">Caso necessario voce pode passar o tableName</param>
         /// <remarks>
-        /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
+        /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
         public MergeBuilder(IDatabaseService databaseService, string tableName)
         {
@@ -164,7 +171,7 @@ namespace SqlComplexOperations
         /// Caso queira usar uma coluna(ENUM BulkStatus) de status para executar o merge. (Default = FALSE).
         /// </summary>
         /// <param name="useStringType">Quando o parametro for true ele salvara na coluna de status uma string quando for false ele salvara um int</param>
-        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/> e deve ser do tipo <see cref="BulkMergeStatus"/></param>
+        /// <param name="expression">A coluna deve estar dentro de <see cref="!:TEntity"/> e deve ser do tipo <see cref="BulkMergeStatus"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -183,7 +190,7 @@ namespace SqlComplexOperations
         /// Caso queira usar uma coluna(STRING) de status para executar o merge. (Default = FALSE).
         /// </summary>
         /// <param name="useStringType">Quando o parametro for true ele salvara na coluna de status uma string quando for false ele salvara um int</param>
-        /// <param name="expression">A coluna deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">A coluna deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -224,7 +231,7 @@ namespace SqlComplexOperations
         /// <br></br>
         /// SetMergeColumns(x => x.ColunaUm)
         /// </remarks>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -249,7 +256,7 @@ namespace SqlComplexOperations
         /// <br></br>
         /// SetUpdatedColumns(x => x)
         /// </remarks>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -274,7 +281,7 @@ namespace SqlComplexOperations
         /// </remarks>
         /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
         /// <param name="conditionOperator">Deve ser um enumerador do tipo <see cref="ConditionOperator"/></param>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -282,7 +289,7 @@ namespace SqlComplexOperations
         {
             var columns = GetColumns(expression);
 
-            var condition = new ConditionBuilder(columns ?? new List<string>(), conditionType, conditionOperator);
+            var condition = new ConditionBuilder(columns ?? [], conditionType, conditionOperator);
             Conditions.Add(condition);
 
             return this;
@@ -302,7 +309,7 @@ namespace SqlComplexOperations
         /// WithCondition(ConditionTypes.NOT_EQUAL, x => x.ColunaUm)
         /// </remarks>
         /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -312,7 +319,7 @@ namespace SqlComplexOperations
             var member = (MemberExpression)expression.Body;
             var column = member.Member.GetMemberName(UsePropertyNameAttr);
 
-            var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
+            var condition = new ConditionBuilder([column], conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
 
             return this;
@@ -332,7 +339,7 @@ namespace SqlComplexOperations
         /// WithCondition(ConditionTypes.NOT_EQUAL, x => x.ColunaUm)
         /// </remarks>
         /// <param name="conditionType">Deve ser um enumerador do tipo <see cref="ConditionType"/></param>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -341,7 +348,7 @@ namespace SqlComplexOperations
             var member = (MemberExpression)expression.Body;
             var column = member.Member.GetMemberName(UsePropertyNameAttr);
 
-            var condition = new ConditionBuilder(new List<string> { column }, conditionType, ConditionOperator.NONE);
+            var condition = new ConditionBuilder([column], conditionType, ConditionOperator.NONE);
             Conditions.Add(condition);
 
             return this;
@@ -360,7 +367,7 @@ namespace SqlComplexOperations
         /// 
         /// SetIgnoreOnIsertOperation(x => x.ColunaAutoIncrement)
         /// </remarks>
-        /// <param name="expression">As colunas deve estar dentro de <see cref="TEntity"/></param>
+        /// <param name="expression">As colunas deve estar dentro de <see cref="!:TEntity"/></param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -374,10 +381,10 @@ namespace SqlComplexOperations
         /// <para>[Obrigatório]</para>
         /// Configura os dados que iram ser utilizados no comando merge.
         /// <br>
-        /// Os dados devem ser uma lista de <see cref="TEntity"/>.
+        /// Os dados devem ser uma lista de <see cref="!:TEntity"/>.
         /// </br>
         /// </summary>
-        /// <param name="datasource">Uma lista de entidades do tipo <see cref="TEntity"/> (Não persistidas no banco) para realizar o merge.</param>
+        /// <param name="datasource">Uma lista de entidades do tipo <see cref="!:TEntity"/> (Não persistidas no banco) para realizar o merge.</param>
         /// <returns>
         /// Retorna o MergeBuilder atual.
         /// </returns>
@@ -401,6 +408,19 @@ namespace SqlComplexOperations
         public virtual MergeBuilder<TEntity> SetTransaction(IDbTransaction transaction)
         {
             DbTransaction = transaction;
+            return this;
+        }
+
+        /// <summary>
+        /// <para>[Opcional]</para>
+        /// Torna os enumeradores como string na base.
+        /// </summary>
+        /// <remarks>
+        /// Default = false.
+        /// </remarks>
+        public MergeBuilder<TEntity> UseEnumAsString()
+        {
+            EnumAsString = true;
             return this;
         }
 
@@ -434,13 +454,13 @@ namespace SqlComplexOperations
             if (DbTransaction.Connection == null)
                 throw new InvalidDbTransactionException<TEntity>("The DbTransaction informed is without one active Connection.", DbTransaction, typeof(MergeBuilder).ToString());
 
-            if (!MergedColumns.Any())
+            if (MergedColumns.Count == 0)
                 throw new InvalidMergedColumnsException<TEntity>("You need to inform the MergedColumns, call the method SetMergeColumns(...) before execute merge.", MergedColumns, this);
 
-            if (!UpdatedColumns.Any())
+            if (UpdatedColumns.Count == 0)
                 throw new InvalidUpdatedColumnsException<TEntity>("You need to inform the UpdatedColumns, call the method SetUpdatedColumns(...) before execute merge.", UpdatedColumns, this);
 
-            if (!DataSource.Any())
+            if (DataSource.Count == 0)
                 throw new InvalidDataSourceException<TEntity>("You need to inform the DataSource, call the method SetDataSource(...) before execute merge.", DataSource, typeof(MergeBuilder).ToString());
 
             if (UsePropertyNameAttr && typeof(TEntity).GetProperties().Select(x => x.GetPropName(true)).Any(x => string.IsNullOrWhiteSpace(x)))
@@ -578,7 +598,7 @@ namespace SqlComplexOperations
                     await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
                 break;
                 case DatabaseType.POSTGRES_SQL:
-                    await _databaseService.BulkInsertToPostgre(dbTransaction, DataSource, $"{_tableName}_temp", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr, !UseEnumStatus);
+                    await _databaseService.BulkInsertToPostgre(dbTransaction, DataSource, $"{_tableName}_temp", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr, EnumAsString);
                 break;
                 default:
                     await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
@@ -601,10 +621,10 @@ namespace SqlComplexOperations
         private List<string> GetColumns(Expression<Func<TEntity, object>> expressions)
         {
             var names = ExpressionExtension.GetMemberNames(UsePropertyNameAttr, expressions);
-            if (names != null && names.Any())
+            if (names != null && names.Count != 0)
                 return names.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
 
-            return new();
+            return [];
         }
     }
 }

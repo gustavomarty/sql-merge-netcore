@@ -28,7 +28,13 @@ namespace SqlComplexOperations.Extensions
                 var instance = new MergeBuilder(databaseService!, DatabaseType.MICROSOFT_SQL_SERVER);
                 return instance;
             });
-            services.AddScoped<IBulkInsertBuilder, BulkInsertBuilder>();
+
+            services.AddScoped<IBulkInsertBuilder, BulkInsertBuilder>(provider =>
+            {
+                var databaseService = provider.GetService<IDatabaseService>();
+                var instance = new BulkInsertBuilder(databaseService!, DatabaseType.MICROSOFT_SQL_SERVER);
+                return instance;
+            });
         }
 
         /// <summary>
@@ -48,7 +54,13 @@ namespace SqlComplexOperations.Extensions
                 var instance = new MergeBuilder(databaseService!, DatabaseType.POSTGRES_SQL);
                 return instance;
             });
-            services.AddScoped<IBulkInsertBuilder, BulkInsertBuilder>();
+
+            services.AddScoped<IBulkInsertBuilder, BulkInsertBuilder>(provider =>
+            {
+                var databaseService = provider.GetService<IDatabaseService>();
+                var instance = new BulkInsertBuilder(databaseService!, DatabaseType.POSTGRES_SQL);
+                return instance;
+            });
         }
     }
 }
