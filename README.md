@@ -25,6 +25,14 @@ Possui o projeto que realiza benchmarks utilizando a abordagem proposta e implem
  - [SqlServer](https://learn.microsoft.com/en-us/sql/sql-server/?view=sql-server-ver16)
  - [PostgreSql](https://www.postgresql.org/docs/)
 
+## Sumario
+
+ - [Guia de uso](https://github.com/gustavomarty/sql-merge-netcore/edit/main/README.md#guia-de-uso)
+ - [BulkMerge](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#exemplo-de-uso-comando-merge-update--insert--delete)
+ - [BulkInsert](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#exemplo-de-uso-comando-copy-insert)
+ - [Benchmarks](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#benchmarks)
+ - [Testes de Unidade](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#exemplo-de-testes-de-unidade-usando-a-lib)
+
 ## Guia de uso
 
 Com a biblioteca referenciada em seu projeto, realize a injeção da mesma utilizando o método *ConfigureSqlComplexOperations* para SqlServer:
@@ -255,3 +263,119 @@ Pare configurar o builder, os possuímos os parâmetros:
     |---------------- |-----------:|-----------:|-----------:|-----------:|
     | ExecuteOneByOne | 4,793.3 ms | 2,808.9 ms | 1,857.9 ms | 4,215.0 ms |
     |   ExecuteUpsert |   508.5 ms | 1,032.9 ms |   683.2 ms |   278.3 ms |    
+
+## Exemplo de testes de unidade usando a LIB
+
+### Utilizando MOQ
+
+```csharp
+public class LibTestExampleMoq
+{
+    private readonly ApplicationContext _context;
+    private readonly Mock<IMergeBuilder> _mergeBuilderMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly ClubeService _clubeService;
+
+    public LibTestExampleMoq()
+    {
+        var contextOptions = new DbContextOptionsBuilder<ApplicationContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ApplicationContext(contextOptions);
+
+        _mergeBuilderMock = new Mock<IMergeBuilder>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+
+        var dbTransactionMock = new Mock<IDbTransaction>();
+        _unitOfWorkMock.Setup(x => x.GetDbTransaction()).Returns(dbTransactionMock.Object);
+
+        _clubeService = new(_context, _mergeBuilderMock.Object, _unitOfWorkMock.Object);
+    }
+
+    [Fact]
+    public async void Upsert_WithMoq()
+    {
+        //ARRANGE
+        var list = new List<ClubeDto> {
+            new() { Nome = "São Paulo", Abreviacao = "SPFC", Apelido = "Tricolor" },
+            new() { Nome = "Coritiba", Abreviacao = "CFC", Apelido = "Coxa" }
+        };
+
+        var entityList = new List<Clube> {
+            new() { Nome = "Coritiba", Abreviacao = "CFC", Apelido = "Verdão" }
+        };
+
+        await _context.AddRangeAsync(entityList);
+        await _context.SaveChangesAsync();
+
+        var databaseServiceMock = new Mock<IDatabaseService>();
+        var builderMock = new Mock<MergeBuilder<Clube>>(databaseServiceMock.Object, DatabaseType.MICROSOFT_SQL_SERVER) { CallBase = true };
+        _mergeBuilderMock.Setup(x => x.Create<Clube>()).Returns(builderMock.Object);
+        builderMock.Setup(x => x.Execute()).Returns(Task.FromResult(new OutputModel()));
+
+        //ACTION
+        await _clubeService.Upsert(list);
+
+        //ASSERT
+        _unitOfWorkMock.Verify(x => x.CommitTransaction(), Times.Once);
+    }
+}
+```
+
+### Utilizando NSubstitute
+
+```csharp
+public class LibTestExampleNSubstitute
+{
+    private readonly ApplicationContext _context;
+    private readonly IMergeBuilder _mergeBuilderMock;
+    private readonly IUnitOfWork _unitOfWorkMock;
+    private readonly ClubeService _clubeService;
+
+    public LibTestExampleNSubstitute()
+    {
+        var contextOptions = new DbContextOptionsBuilder<ApplicationContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        _context = new ApplicationContext(contextOptions);
+
+        _mergeBuilderMock = Substitute.For<IMergeBuilder>();
+        _unitOfWorkMock = Substitute.For<IUnitOfWork>();
+
+        var dbTransactionMock = Substitute.For<IDbTransaction>();
+        _unitOfWorkMock.GetDbTransaction().Returns(dbTransactionMock);
+
+        _clubeService = new(_context, _mergeBuilderMock, _unitOfWorkMock);
+    }
+
+    [Fact]
+    public async void Upsert_WithMoq()
+    {
+        //ARRANGE
+        var list = new List<ClubeDto> {
+            new() { Nome = "São Paulo", Abreviacao = "SPFC", Apelido = "Tricolor" },
+            new() { Nome = "Coritiba", Abreviacao = "CFC", Apelido = "Coxa" }
+        };
+
+        var entityList = new List<Clube> {
+            new() { Nome = "Coritiba", Abreviacao = "CFC", Apelido = "Verdão" }
+        };
+
+        await _context.AddRangeAsync(entityList);
+        await _context.SaveChangesAsync();
+
+        var databaseServiceMock = Substitute.For<IDatabaseService>();
+        var builderMock = Substitute.ForPartsOf<MergeBuilder<Clube>>(databaseServiceMock, DatabaseType.MICROSOFT_SQL_SERVER);
+        _mergeBuilderMock.Create<Clube>().Returns(builderMock);
+        builderMock.Execute().Returns(Task.FromResult(new OutputModel()));
+
+        //ACTION
+        await _clubeService.Upsert(list);
+
+        //ASSERT
+        _unitOfWorkMock.Received(1).CommitTransaction();
+    }
+}
+```
