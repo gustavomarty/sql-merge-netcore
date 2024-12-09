@@ -113,10 +113,15 @@ Pare configurar o builder, os possuímos os parâmetros:
            .WithCondition(ConditionTypes.EQUALS, x => x.Nome)
   
 - SetIgnoreOnIsertOperation [**opcional**]:
-  - Podemos configurar colunar que são ignoradas ao realizar a instrução de inserção, como por exemplo campos *auto identity* ou colunas que você simplesmente não queira utilizar na inserção do registro.
+  - Podemos configurar colunas que são ignoradas ao realizar a instrução de inserção, como por exemplo campos *auto identity* ou colunas que você simplesmente não queira utilizar na inserção do registro.
 
         .SetIgnoreOnIsertOperation(x => x.Id)
+    
+- UseEnumAsString [**opcional**]:
+  - Em caso de querer usar enumeradores como string na base.
 
+        .UseEnumAsString()
+    
 - UseStatusConfiguration [**opcional**]:
   - Utilize uma coluna de status em sua tabela de destino para receber a informação se, após a execução do comando merge, o registro foi alterado, inserido ou simplesmente não foi afetado (pode ser usado também para deleções lógicas). 
   - O status poode ser salvo como string ou como inteiro no seu banco de dados (em casos salvos como inteiro o valor terá os valores do enum *BulkMergeStatus*).
@@ -201,6 +206,12 @@ Pare configurar o builder, os possuímos os parâmetros:
             public string Nome { get; set; }
 
             .UsePropertyNameAttribute()
+
+- UseEnumAsString [**opcional**]:
+  - Em caso de querer usar enumeradores como string na base.
+
+        .UseEnumAsString()
+ 
 
 - UseSnakeCaseNamingConvention [**opcional**]:
   - Caso utilize em seu banco de dados alguma [convensão](https://github.com/efcore/EFCore.NamingConventions) específica, a biblioteca da suporte a:
