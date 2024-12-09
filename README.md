@@ -27,7 +27,7 @@ Possui o projeto que realiza benchmarks utilizando a abordagem proposta e implem
 
 ## Sumario
 
- - [Guia de uso](https://github.com/gustavomarty/sql-merge-netcore/edit/main/README.md#guia-de-uso)
+ - [Guia de uso](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#guia-de-uso)
  - [BulkMerge](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#exemplo-de-uso-comando-merge-update--insert--delete)
  - [BulkInsert](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#exemplo-de-uso-comando-copy-insert)
  - [Benchmarks](https://github.com/gustavomarty/sql-merge-netcore/tree/main?tab=readme-ov-file#benchmarks)
