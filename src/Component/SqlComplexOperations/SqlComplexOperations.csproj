@@ -32,6 +32,7 @@ Adiciona documentação.</PackageReleaseNotes>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Npgsql" Version="8.0.6" />
   </ItemGroup>
 
 </Project>

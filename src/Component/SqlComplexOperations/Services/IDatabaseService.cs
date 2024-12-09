@@ -6,6 +6,7 @@ namespace SqlComplexOperations.Services
     public interface IDatabaseService
     {
         public Task BulkInsert<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr);
+        public Task BulkInsertToPostgre<TEntity>(IDbTransaction dbTransaction, List<TEntity> dataSource, string tableName, string schema, List<string> columnOrder, bool isSnakeCase, bool propNameAttr, bool useStringType);
         OutputModel ExecuteMergeCommand(IDbTransaction dbTransaction, string command);
         OutputModelRowCount ExecuteMergeCommandRowCount(IDbTransaction dbTransaction, string command);
         OutputModelSimple ExecuteMergeCommandSimple(IDbTransaction dbTransaction, string command);

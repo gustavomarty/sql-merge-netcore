@@ -17,10 +17,12 @@ namespace SqlComplexOperations
     public class MergeBuilder : IMergeBuilder
     {
         private readonly IDatabaseService _databaseService;
+        private readonly DatabaseType _databaseType;
 
-        public MergeBuilder(IDatabaseService databaseService)
+        public MergeBuilder(IDatabaseService databaseService, DatabaseType databaseType)
         {
             _databaseService = databaseService;
+            _databaseType = databaseType;
         }
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace SqlComplexOperations
         /// </remarks>
         public MergeBuilder<TEntity> Create<TEntity>() where TEntity : class
         {
-            return new MergeBuilder<TEntity>(_databaseService);
+            return new MergeBuilder<TEntity>(_databaseService, _databaseType);
         }
 
         /// <summary>
@@ -56,7 +58,7 @@ namespace SqlComplexOperations
     public class MergeBuilder<TEntity> where TEntity : class
     {
         private readonly IDatabaseService _databaseService;
-
+        private readonly DatabaseType _databaseType;
         private string _tableName;
 
         private string StatusColumn { get; set; } = string.Empty;
@@ -86,10 +88,10 @@ namespace SqlComplexOperations
         /// <remarks>
         /// O Tipo <see cref="TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
-        public MergeBuilder(IDatabaseService databaseService)
+        public MergeBuilder(IDatabaseService databaseService, DatabaseType databaseType)
         {
             _databaseService = databaseService;
-
+            _databaseType = databaseType;
             _tableName = typeof(TEntity).Name;
         }
 
@@ -447,7 +449,12 @@ namespace SqlComplexOperations
 
         private void SetPrimaryKeyColumn(IDbTransaction dbTransaction)
         {
-            var query = SqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema);
+            string query = _databaseType switch
+            {
+                DatabaseType.MICROSOFT_SQL_SERVER => SqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema),
+                DatabaseType.POSTGRES_SQL => PostgreSqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema),
+                _ => SqlBuilder.BuildPrimaryKeyQuery(_tableName, DbSchema),
+            };
 
             var result = _databaseService.ExecuteScalarCommand(dbTransaction, query);
 
@@ -459,7 +466,12 @@ namespace SqlComplexOperations
 
         private void SetAllColumnsInDatabaseOrder(IDbTransaction dbTransaction)
         {
-            var query = SqlBuilder.BuildAllColumnsDbOrderQuery(_tableName, DbSchema);
+            string query = _databaseType switch
+            {
+                DatabaseType.MICROSOFT_SQL_SERVER => SqlBuilder.BuildAllColumnsDbOrderQuery(_tableName, DbSchema),
+                DatabaseType.POSTGRES_SQL => PostgreSqlBuilder.BuildAllColumnsDbOrderQuery(_tableName, DbSchema),
+                _ => SqlBuilder.BuildAllColumnsDbOrderQuery(_tableName, DbSchema),
+            };
             var result = _databaseService.ExecuteReaderCommand(dbTransaction, query);
 
             AllColumnsInDatabaseOrder = result;
@@ -483,7 +495,12 @@ namespace SqlComplexOperations
                 UseDeleteClause = UseDeleteClause
             };
 
-            var stringQuery = SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration);
+            string stringQuery = _databaseType switch
+            {
+                DatabaseType.MICROSOFT_SQL_SERVER => SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration),
+                DatabaseType.POSTGRES_SQL => PostgreSqlBuilder.BuildMerge(mergeBuilderSqlConfiguration),
+                _ => SqlBuilder.BuildMerge(mergeBuilderSqlConfiguration),
+            };
 
             OutputModel result = ResponseTypeValue switch
             {
@@ -543,19 +560,40 @@ namespace SqlComplexOperations
 
         private void CreateTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = SqlBuilder.BuildTempTable(_tableName, DbSchema);
+            string sqlCommand = _databaseType switch
+            {
+                DatabaseType.MICROSOFT_SQL_SERVER => SqlBuilder.BuildTempTable(_tableName, DbSchema),
+                DatabaseType.POSTGRES_SQL => PostgreSqlBuilder.BuildTempTable(_tableName, DbSchema),
+                _ => SqlBuilder.BuildTempTable(_tableName, DbSchema),
+            };
 
             _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }
 
         private async Task PopulateTempTable(IDbTransaction dbTransaction)
         {
-            await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
+            switch (_databaseType)
+            {
+                case DatabaseType.MICROSOFT_SQL_SERVER:
+                    await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
+                break;
+                case DatabaseType.POSTGRES_SQL:
+                    await _databaseService.BulkInsertToPostgre(dbTransaction, DataSource, $"{_tableName}_temp", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr, !UseEnumStatus);
+                break;
+                default:
+                    await _databaseService.BulkInsert(dbTransaction, DataSource, $"#{_tableName}", DbSchema, AllColumnsInDatabaseOrder, SnakeCaseNamingConvention, UsePropertyNameAttr);
+                break;
+            }
         }
 
         private void DropTempTable(IDbTransaction dbTransaction)
         {
-            var sqlCommand = SqlBuilder.BuildDropTempTable(_tableName, DbSchema);
+            string sqlCommand = _databaseType switch
+            {
+                DatabaseType.MICROSOFT_SQL_SERVER => SqlBuilder.BuildDropTempTable(_tableName, DbSchema),
+                DatabaseType.POSTGRES_SQL => PostgreSqlBuilder.BuildDropTempTable(_tableName, DbSchema),
+                _ => SqlBuilder.BuildDropTempTable(_tableName, DbSchema),
+            };
 
             _databaseService.ExecuteNonQueryCommand(dbTransaction, sqlCommand);
         }

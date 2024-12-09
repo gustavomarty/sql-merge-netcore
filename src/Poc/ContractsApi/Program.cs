@@ -13,7 +13,7 @@ builder.Services.AddControllers().AddJsonOptions(options => {
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerConfiguration();
-builder.Services.ConfigureSqlComplexOperations();
+builder.Services.ConfigurePostgreSqlComplexOperations();
 builder.Services.AddEntityFrameworkConfiguration(builder.Configuration);
 
 builder.Services.AddScoped<IClubeService, ClubeService>();

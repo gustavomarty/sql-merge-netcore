@@ -62,7 +62,6 @@ namespace Contracts.Service
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             var builder = await _mergeBuilder.Create<Fornecedor>()
-                .UseDatabaseSchema("dbo")
                 .SetDataSource(dataSource)
                 .SetTransaction(transaction.GetDbTransaction())
                 .SetResponseType(responseType)
@@ -71,6 +70,7 @@ namespace Contracts.Service
                 .SetUpdatedColumns(x => x)
                 .WithCondition(ConditionType.NOT_EQUAL, ConditionOperator.OR, x => new { x.Cep, x.Nome })
                 .SetIgnoreOnInsertOperation(x => x.Id)
+                .DeleteWhenDataIsNotInDataSource()
                 .UseStatusConfiguration(false, x => x.Status)
                 .Execute();
 
