@@ -50,7 +50,7 @@ namespace SqlComplexOperations
         /// </remarks>
         public MergeBuilder<TEntity> Create<TEntity>(string tableName) where TEntity : class
         {
-            return new MergeBuilder<TEntity>(_databaseService, tableName);
+            return new MergeBuilder<TEntity>(_databaseService, _databaseType, tableName);
         }
     }
 
@@ -105,14 +105,15 @@ namespace SqlComplexOperations
         /// Cria uma nova instancia do MergeBuilder.
         /// </summary>
         /// <param name="databaseService"></param>
+        /// <param name="databaseType"></param>
         /// <param name="tableName">Caso necessario voce pode passar o tableName</param>
         /// <remarks>
         /// O Tipo <see cref="!:TEntity"/> é a entidade (Banco) onde o merge será executado.
         /// </remarks>
-        public MergeBuilder(IDatabaseService databaseService, string tableName)
+        public MergeBuilder(IDatabaseService databaseService, DatabaseType databaseType, string tableName)
         {
             _databaseService = databaseService;
-
+            _databaseType = databaseType;
             _tableName = tableName;
         }
 
