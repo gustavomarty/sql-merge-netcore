@@ -13,9 +13,8 @@
     <PackageIcon>efns_logo_icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/gustavomarty/sql-merge-netcore</RepositoryUrl>
-    <Version>1.0.1</Version>
-    <PackageReleaseNotes>Adiciona virtual nos metodos Execute das operações para facilitar os testes de unidade.
-Adiciona documentação.</PackageReleaseNotes>
+    <Version>2.0.1</Version>
+    <PackageReleaseNotes>Ajusta uso de postgres com nome da tabela customizavel.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
