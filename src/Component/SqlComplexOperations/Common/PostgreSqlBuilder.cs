@@ -11,10 +11,10 @@ namespace SqlComplexOperations.Common
         {
             if (!string.IsNullOrWhiteSpace(schema))
             {
-                return $@"create temp table {tableName}_temp as select * from {schema}.{tableName} where false";
+                return $"create temp table {tableName}_temp as select * from {schema}.\"{tableName}\" where false";
             }
 
-            return $@"create temp table {tableName}_temp as select * from {tableName} where false";
+            return $"create temp table {tableName}_temp as select * from \"{tableName}\" where false";
         }
 
         internal static string BuildPrimaryKeyQuery(string tableName, string schema)
@@ -42,8 +42,8 @@ namespace SqlComplexOperations.Common
         internal static string BuildMerge(MergeBuilderSqlConfiguration mergeBuilderSqlConfiguration)
         {
             var stringBuilderQuery = string.IsNullOrWhiteSpace(mergeBuilderSqlConfiguration.Schema)
-                ? new StringBuilder($"MERGE INTO {mergeBuilderSqlConfiguration.TableName} as tgt \n using {mergeBuilderSqlConfiguration.TableName}_temp as src on ")
-                : new StringBuilder($"MERGE INTO [{mergeBuilderSqlConfiguration.Schema}].{mergeBuilderSqlConfiguration.TableName} as tgt \n using [{mergeBuilderSqlConfiguration.Schema}].{mergeBuilderSqlConfiguration.TableName}_temp as src on ");
+                ? new StringBuilder($"MERGE INTO \"{mergeBuilderSqlConfiguration.TableName}\" as tgt \n using {mergeBuilderSqlConfiguration.TableName}_temp as src on ")
+                : new StringBuilder($"MERGE INTO [{mergeBuilderSqlConfiguration.Schema}].\"{mergeBuilderSqlConfiguration.TableName}\" as tgt \n using [{mergeBuilderSqlConfiguration.Schema}].{mergeBuilderSqlConfiguration.TableName}_temp as src on ");
 
             BuildMergedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.MergedColumns);
 
@@ -53,13 +53,8 @@ namespace SqlComplexOperations.Common
             stringBuilderQuery.Append($" then \n update set ");
             BuildUpdatedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.UpdatedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
 
-            if (mergeBuilderSqlConfiguration.UseDeleteClause)
-                BuildDeletedClause(stringBuilderQuery, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
-
-            stringBuilderQuery.Append($"\n when not matched by target then \n insert ");
+            stringBuilderQuery.Append($"\n when not matched then \n insert ");
             BuildInsertedColumns(stringBuilderQuery, mergeBuilderSqlConfiguration.InsertedColumns, mergeBuilderSqlConfiguration.StatusColumn, mergeBuilderSqlConfiguration.UseEnumStatus);
-
-            BuildOutput(stringBuilderQuery, mergeBuilderSqlConfiguration.ResponseType, mergeBuilderSqlConfiguration.AllColumns);
 
             return stringBuilderQuery.ToString();
         }
@@ -68,17 +63,17 @@ namespace SqlComplexOperations.Common
         {
             if (!string.IsNullOrWhiteSpace(schema))
             {
-                return $@"drop table if exists {schema}.{tableName}_temp";
+                return $"drop table if exists {schema}.{tableName}_temp";
             }
 
-            return $@"drop table if exists {tableName}_temp";
+            return $"drop table if exists {tableName}_temp";
         }
 
         private static void BuildMergedColumns(StringBuilder stringBuilderQuery, List<string> mergedColumns)
         {
             for (int i = 0; i < mergedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"tgt.{mergedColumns[i]} = src.{mergedColumns[i]}");
+                stringBuilderQuery.Append($"tgt.\"{mergedColumns[i]}\" = src.\"{mergedColumns[i]}\"");
 
                 if (i != mergedColumns.Count - 1)
                     stringBuilderQuery.Append(" AND ");
@@ -102,7 +97,7 @@ namespace SqlComplexOperations.Common
                         stringBuilderQuery.Append($" {cOperator} ");
                     }
 
-                    stringBuilderQuery.Append($"tgt.{field} {cType} src.{field}");
+                    stringBuilderQuery.Append($"tgt.\"{field}\" {cType} src.\"{field}\"");
                 }
 
                 stringBuilderQuery.Append(')');
@@ -113,7 +108,7 @@ namespace SqlComplexOperations.Common
         {
             for (int i = 0; i < updatedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"{updatedColumns[i]} = src.{updatedColumns[i]}");
+                stringBuilderQuery.Append($"\"{updatedColumns[i]}\" = src.\"{updatedColumns[i]}\"");
 
                 if (i != updatedColumns.Count - 1)
                     stringBuilderQuery.Append($", ");
@@ -122,29 +117,52 @@ namespace SqlComplexOperations.Common
             if (!string.IsNullOrWhiteSpace(statusColumn))
             {
                 if (useEnumStatus)
-                    stringBuilderQuery.Append($", {statusColumn} = {(int)BulkMergeStatus.UPDATED}");
+                    stringBuilderQuery.Append($", \"{statusColumn}\" = {(int)BulkMergeStatus.UPDATED}");
                 else
-                    stringBuilderQuery.Append($", {statusColumn} = '{BulkMergeStatus.UPDATED}'");
+                    stringBuilderQuery.Append($", \"{statusColumn}\" = '{BulkMergeStatus.UPDATED}'");
             }
         }
 
-        private static void BuildDeletedClause(StringBuilder stringBuilderQuery, string statusColumn, bool useEnumStatus)
+        public static string GetDeleteScript(string tableName, List<string> mergedColumns, string statusColumn, bool useEnumStatus)
         {
-            stringBuilderQuery.Append($"\n when not matched by source then ");
-
             if (string.IsNullOrWhiteSpace(statusColumn))
             {
-                stringBuilderQuery.Append($"\n delete ");
-                return;
-            }
+                var sql = new StringBuilder($"DELETE FROM \"{tableName}\" as tgt WHERE NOT EXISTS (SELECT 1 FROM {tableName}_temp as src WHERE ");
 
-            if (useEnumStatus)
-            {
-                stringBuilderQuery.Append($"\n update set {statusColumn} = {(int)BulkMergeStatus.DELETED} ");
+                for (int i = 0; i < mergedColumns.Count; i++)
+                {
+                    sql.Append($"tgt.\"{mergedColumns[i]}\" = src.\"{mergedColumns[i]}\"");
+
+                    if (i != mergedColumns.Count - 1)
+                        sql.Append(" AND ");
+                }
+
+                sql.Append(");");
+
+                return sql.ToString();
             }
             else
             {
-                stringBuilderQuery.Append($"\n update set {statusColumn} = '{BulkMergeStatus.DELETED}' ");
+                var sql = new StringBuilder($"UPDATE \"{tableName}\" as tgt ");
+
+                if (useEnumStatus)
+                    sql.Append($"set \"{statusColumn}\" = {(int)BulkMergeStatus.DELETED} ");
+                else
+                    sql.Append($"set \"{statusColumn}\" = '{BulkMergeStatus.DELETED}' ");
+
+                sql.Append("WHERE NOT EXISTS (SELECT 1 FROM {tableName}_temp as src WHERE ");
+
+                for (int i = 0; i < mergedColumns.Count; i++)
+                {
+                    sql.Append($"tgt.\"{mergedColumns[i]}\" = src.\"{mergedColumns[i]}\"");
+
+                    if (i != mergedColumns.Count - 1)
+                        sql.Append(" AND ");
+                }
+
+                sql.Append(");");
+
+                return sql.ToString();
             }
         }
 
@@ -153,18 +171,18 @@ namespace SqlComplexOperations.Common
             stringBuilderQuery.Append($"(");
             for (int i = 0; i < insertedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"{insertedColumns[i]}");
+                stringBuilderQuery.Append($"\"{insertedColumns[i]}\"");
 
                 if (i != insertedColumns.Count - 1)
                     stringBuilderQuery.Append(", ");
             }
             if (!string.IsNullOrWhiteSpace(statusColumn))
-                stringBuilderQuery.Append($", {statusColumn}");
+                stringBuilderQuery.Append($", \"{statusColumn}\"");
 
             stringBuilderQuery.Append($") values (");
             for (int i = 0; i < insertedColumns.Count; i++)
             {
-                stringBuilderQuery.Append($"src.{insertedColumns[i]}");
+                stringBuilderQuery.Append($"src.\"{insertedColumns[i]}\"");
 
                 if (i != insertedColumns.Count - 1)
                     stringBuilderQuery.Append(", ");
@@ -178,28 +196,7 @@ namespace SqlComplexOperations.Common
                     stringBuilderQuery.Append($", '{BulkMergeStatus.INSERTED}'");
             }
 
-            stringBuilderQuery.Append(')');
-        }
-
-        private static void BuildOutput(StringBuilder stringBuilderQuery, ResponseType responseType, List<string> updateColumns)
-        {
-            if (responseType == ResponseType.SIMPLE || responseType == ResponseType.ROW_COUNT)
-            {
-                stringBuilderQuery.Append($" \n returning merge_action()");
-            }
-            else if (responseType == ResponseType.COMPLETE)
-            {
-                stringBuilderQuery.Append($" \n returning merge_action()");
-
-                foreach (var column in updateColumns)
-                {
-                    stringBuilderQuery.Append($", src.{column} as src{column}");
-                    stringBuilderQuery.Append($", tgt.{column} as tgt{column}");
-                }
-
-            }
-
-            stringBuilderQuery.Append(';');
+            stringBuilderQuery.Append(");");
         }
     }
 }

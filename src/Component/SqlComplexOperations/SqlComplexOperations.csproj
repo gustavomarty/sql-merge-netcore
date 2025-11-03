@@ -13,8 +13,8 @@
     <PackageIcon>efns_logo_icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/gustavomarty/sql-merge-netcore</RepositoryUrl>
-    <Version>2.0.1</Version>
-    <PackageReleaseNotes>Ajusta uso de postgres com nome da tabela customizavel.</PackageReleaseNotes>
+    <Version>2.1.0</Version>
+    <PackageReleaseNotes>Ajustes gerais para postgreSQL. Mudança do Default Response type para: NONE</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

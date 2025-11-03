@@ -23,7 +23,9 @@ Possui o projeto que realiza benchmarks utilizando a abordagem proposta e implem
 
 ## Bancos de dados suportados
  - [SqlServer](https://learn.microsoft.com/en-us/sql/sql-server/?view=sql-server-ver16)
- - [PostgreSql](https://www.postgresql.org/docs/)
+ - [PostgreSql](https://www.postgresql.org/docs/) **
+
+ ** *(PostgreSQL é suportado com algumas limitações).*
 
 ## Sumario
 
@@ -108,6 +110,8 @@ Pare configurar o builder, os possuímos os parâmetros:
 
         .UseDatabaseSchema("dif_schema")
 
+    **Limitação PostgreSQL**: Para posgtreSQL esse comando delete será rodado apos o merge pois o mesmo não suporta o DELETE dentro do comando merge.
+
 - WithCondition [**opcional**]:
   - Podemos configurar condições para o comando só realizar as alterações em registros existentes e que realmente sofreram alterações.
   - Antes de realizar o update, o comando checa se os campos que você deseja comparar estão diferentes entre o *data source* e a tabela de destino, evitando processamento desnecessário no banco de dados.
@@ -161,14 +165,14 @@ Pare configurar o builder, os possuímos os parâmetros:
 
 - SetResponseType [**opcional**]:
   - Você pode setar o tipo de resposta que você espera receber, possiveis respostas:
-    - NONE (Sem nenhum retorno)
-    - ROW_COUNT (Retorna o numero de linhas afetadas) - [**default**]
+    - NONE (Sem nenhum retorno) - [**default**]
+    - ROW_COUNT (Retorna o numero de linhas afetadas)
     - SIMPLE (Retorna quantos registros foram atualizados, quantos foram inseridos e quantos foram deletados (Alem do total de registros alterados))
     - COMPLETE (Retorna um de -> para dos registros atualizados, o registro inserido (Caso exista) e o registro deletado (Caso exista))**
 
             .SetResponseType(ResponseType.SIMPLE)
 
-    ** *O Uso do tipo COMPLETE quando usado com postgres, não consegue trazer em casos de atualização os dados antigos (pré update), só irá trazer os dados atualiados (pós update).*
+    **Limitação PostgreSQL**: Para posgtreSQL o unico response type suportado é o **NONE**, isso porque o comando merge no postgreSQL não aceita tipos de resultado.
 
 ## Exemplo de uso comando COPY (insert)
 

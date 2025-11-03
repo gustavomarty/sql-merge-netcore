@@ -6,6 +6,7 @@ using SqlComplexOperations.Models.Output;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -42,7 +43,15 @@ namespace SqlComplexOperations.Services
 
             using var dataReader = new ObjectDataReader<TEntity>(dataSource.GetEnumerator(), columnOrder, isSnakeCase, propNameAttr);
 
-            await using var importer = await connection.BeginBinaryImportAsync($"COPY {fullTableName} ({string.Join(", ", columnOrder)}) FROM STDIN (FORMAT BINARY)");
+            StringBuilder importColumns = new();
+            foreach(var c in columnOrder)
+            {
+                importColumns.Append($"\"{c}\", ");
+            }
+
+            importColumns.Remove(importColumns.Length - 2, 2);
+
+            await using var importer = await connection.BeginBinaryImportAsync($"COPY {fullTableName} ({importColumns}) FROM STDIN (FORMAT BINARY)");
 
             while (dataReader.Read())
             {
@@ -50,7 +59,7 @@ namespace SqlComplexOperations.Services
                 for (int i = 0; i < dataReader.FieldCount; i++)
                 {
                     var value = dataReader.GetValue(i);
-                    if (value.GetType().IsEnum)
+                    if (value != null && value.GetType().IsEnum)
                     {
                         value = (useStringType) ? value.ToString() : (int)value;
                     }

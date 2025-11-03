@@ -84,7 +84,7 @@ namespace SqlComplexOperations
         private List<string> IgnoredOnInsertOperation { get; set; } = [];
         private List<string> AllColumnsInDatabaseOrder { get; set; } = [];
 
-        private ResponseType ResponseTypeValue { get; set; } = ResponseType.ROW_COUNT;
+        private ResponseType ResponseTypeValue { get; set; } = ResponseType.NONE;
 
         private List<ConditionBuilder> Conditions { get; set; } = [];
 
@@ -207,7 +207,11 @@ namespace SqlComplexOperations
 
         /// <summary>
         /// <para>[Opcional]</para>
-        /// Define o tipo de resposta na execução do bulk. (Default = ROW_COUNT).
+        /// Define o tipo de resposta na execução do bulk. (Default = NONE).
+        /// 
+        /// [POSTGRESQL]
+        /// O PostgreSQL tem uma limitação no comando merge, nesse caso o unico suporte para PostgreSQL seria: ResponseType.NONE
+        /// 
         /// </summary>
         /// <param name="responseType">Tipo do response deve ser do enumerador <see cref="ResponseType"/>.</param>
         /// <returns>
@@ -215,6 +219,11 @@ namespace SqlComplexOperations
         /// </returns>
         public MergeBuilder<TEntity> SetResponseType(ResponseType responseType)
         {
+            if(_databaseType == DatabaseType.POSTGRES_SQL && responseType != ResponseType.NONE)
+            {
+                throw new InvalidConfigurationPostgreSqlException<TEntity>($"The response type: {responseType.DisplayName()} is not supported for postgreSQL. Please use: 'ResponseType.NONE'", "SetResponseType");
+            }
+
             ResponseTypeValue = responseType;
             return this;
         }
@@ -530,6 +539,12 @@ namespace SqlComplexOperations
                 ResponseType.COMPLETE => _databaseService.ExecuteMergeCommandComplete<TEntity>(dbTransaction, stringQuery, AllColumns, SnakeCaseNamingConvention, UsePropertyNameAttr),
                 _ => _databaseService.ExecuteMergeCommandRowCount(dbTransaction, stringQuery),
             };
+
+            if (UseDeleteClause && _databaseType == DatabaseType.POSTGRES_SQL)
+            {
+                var sql = PostgreSqlBuilder.GetDeleteScript(_tableName, MergedColumns, StatusColumn, UseEnumStatus);
+                _databaseService.ExecuteNonQueryCommand(dbTransaction, sql);
+            }
 
             return result;
         }
